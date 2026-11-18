@@ -6,6 +6,7 @@ import { billingState, can, currentStage, stageDeadline, WorkflowError } from ".
 import { services } from "../../../src/server/services";
 import { requireActor } from "../../../src/server/session";
 import { CommandForm } from "../../forms";
+import { TourHint } from "../../tour/hint";
 import { AccessDenied, Badge, Details, Heading, History, Shell, time } from "../../ui";
 
 export default async function JobPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,6 +31,14 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const canManageExceptions = !job.closedAt && can(settings, actor, "exception.manage");
   return <Shell actor={actor} path={path}>
     <Heading title={`JOB-${id.slice(0, 8).toUpperCase()}`} text={`${job.data.customer || "Job"} · Sea Import Customs`} back />
+    <TourHint title={billing === "closed" ? "Review the completed job" : billing === "billing_ready" ? "Send the job to Accounts for closure" : "Work through the job"}>
+      {billing === "closed" ? "Find the milestone, exception and closure events in Audit history below."
+        : billing === "billing_ready" ? (actor.role === "accounts" ? "Review Billing and select Close job."
+          : "Switch to Accounts in the header to close the job on this page.")
+          : actor.role !== "operations" ? "Switch to Operations in the header to work on the milestones and exceptions."
+            : openIssues.length ? "Complete the remaining milestones and record the recovery in Exceptions. Billing stays blocked until the open exception is resolved."
+              : "Complete the current milestone. While work is active, use Raise exception to test assigning a customs issue and recording its recovery."}
+    </TourHint>
     <div className="grid items-start gap-5 lg:grid-cols-[1.2fr_1fr]">
       <div className="space-y-5">
         <section className="panel pad space-y-4">

@@ -4,7 +4,8 @@ import { AlertCircle, ArrowUpRight, ClipboardList, PackageCheck, Ship } from "lu
 import { currentActor, demoMode } from "../src/server/session";
 import { services } from "../src/server/services";
 import { billingState, can, currentStage, openExceptions, stageDeadline, WorkflowError } from "../src/core/model";
-import { IntakeForm, RoleForm } from "./forms";
+import { CommandForm, IntakeForm, RoleForm } from "./forms";
+import { TourHint } from "./tour/hint";
 import { AccessDenied, Badge, Brand, Empty, Heading, Shell, ShortId } from "./ui";
 
 export const dynamic = "force-dynamic";
@@ -71,21 +72,37 @@ export default async function Dashboard() {
       </table></div> : <Empty message="Approved quotes appear here as jobs." />}
     </section>
     <section className="panel overflow-hidden" aria-labelledby="enquiry-heading">
-      <div className="pad"><h2 className="text-lg font-semibold" id="enquiry-heading">Enquiries &amp; Quotes</h2></div>
+      <div className="pad space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold" id="enquiry-heading">Enquiry inbox</h2>
+            <p className="quiet mt-1">Review incoming enquiries and track internal quotes.</p>
+          </div>
+          {can(settings, actor, "intake.write") && <CommandForm command="import-inbox" ids={{ batchId: randomUUID() }}
+            label="Simulate incoming enquiries" secondary />}
+        </div>
+        <TourHint title={actor.role === "manager" ? "Review a draft quote" : actor.role === "accounts" ? "Find a billing-ready job" : "Start with an incoming enquiry"}>
+          {actor.role === "manager" ? "Open an enquiry awaiting approval and review the draft quote."
+            : actor.role === "accounts" ? "Open a billing-ready job in the Jobs list to review and close it."
+              : actor.role === "operations" ? "Open a sample enquiry. Pick Ready to quote for the direct path, or Needs Review to see how missing details are handled."
+                : "Switch to Operations in the header to review an incoming enquiry."}
+        </TourHint>
+      </div>
       {enquiries.length ? <div className="overflow-x-auto"><table className="data-table min-w-[650px]">
-        <thead><tr>{["Reference", "Customer", "Status", "Next action"].map((label) => <th key={label} scope="col">{label}</th>)}</tr></thead>
+        <thead><tr>{["Reference", "Customer", "Owner", "Status", "Next action"].map((label) => <th key={label} scope="col">{label}</th>)}</tr></thead>
         <tbody>{enquiries.map((enquiry) => {
           const quote = quoteFor.get(enquiry.id);
           const job = jobFor.get(enquiry.id);
           const status = quote ? (quote.approvedAt ? "approved" : "draft") : (enquiry.issues.length ? "needs_review" : "ready");
           return <tr key={enquiry.id}>
             <td><Link className="font-semibold text-wine" href={`/enquiries/${enquiry.id}`}>{enquiry.sourceRef}</Link></td>
-            <td>{enquiry.data.customer || "—"}</td><td><Badge text={settings.labels[status]} tone={status === "needs_review" ? "warn" : "neutral"} /></td>
+            <td>{enquiry.data.customer || "—"}</td><td>{users.get(enquiry.ownerId) ?? "—"}</td>
+            <td><Badge text={settings.labels[status]} tone={status === "needs_review" ? "warn" : "neutral"} /></td>
             <td>{job ? <Link className="font-semibold text-wine" href={`/jobs/${job.id}`}>Open job</Link>
               : quote ? "Manager review" : enquiry.issues[0] ?? "Draft internal quote"}</td>
           </tr>;
         })}</tbody>
-      </table></div> : <Empty message="Create an enquiry to start a quote." />}
+      </table></div> : <Empty message="Incoming enquiries will appear here. Operations can simulate an incoming batch for the demo." />}
       {can(settings, actor, "intake.write") && <details className="border-t border-line pad" open={!enquiries.length}>
         <summary className="text-sm font-semibold text-wine">New enquiry</summary>
         <div className="mt-4"><IntakeForm reference={`DEMO-${randomUUID().slice(0, 8).toUpperCase()}`} required={settings.required} /></div>

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Pool } from "pg";
 import { afterAll, describe, expect, it } from "vitest";
 import { defaultWorkflow, demoUsers, exampleEnquiry, exampleRate } from "../demo/fixtures";
+import { importDemoInbox } from "../demo/inbox";
 import { mockRate } from "../src/adapters/mock-rate";
 import { postgresDemoIdentity, postgresStore } from "../src/adapters/postgres";
 import { billingState, currentStage } from "../src/core/model";
@@ -31,6 +32,19 @@ async function finish(jobId: string) {
 afterAll(() => pool.end());
 
 describe("Sea Import Customs on Postgres", () => {
+  it("imports complete and incomplete enquiries and safely replays the same inbox batch", async () => {
+    const batch = randomUUID().toUpperCase();
+    await importDemoInbox(workflow, operations, batch);
+    await importDemoInbox(workflow, operations, batch);
+    const enquiries = (await store.read.list("enquiries")).filter((enquiry) => enquiry.sourceRef.startsWith(`INBOX-${batch}-`));
+    expect(enquiries).toHaveLength(4);
+    expect(enquiries.filter((enquiry) => enquiry.issues.length === 0)).toHaveLength(2);
+    const missing = enquiries.find((enquiry) => enquiry.sourceRef.endsWith("-03"));
+    expect(missing?.issues).toEqual(["Arrival port is required."]);
+    expect((await store.read.auditFor(enquiries.map((enquiry) => enquiry.id))).map((event) => event.action))
+      .toEqual(Array(4).fill("Enquiry imported"));
+  });
+
   it("takes an enquiry through approval, milestones and Accounts closure", async () => {
     const { enquiry, quote } = await draft();
     expect(quote.priceCents).toBe(147059);

@@ -1,7 +1,13 @@
 import { readFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import nextEnv from "@next/env";
 import { Pool } from "pg";
-import { defaultWorkflow, demoUsers } from "../demo/fixtures";
+import { defaultWorkflow, demoUsers, exampleRate } from "../demo/fixtures";
+import { importDemoInbox } from "../demo/inbox";
+import { mockRate } from "../src/adapters/mock-rate";
+import { postgresStore } from "../src/adapters/postgres";
+import { can } from "../src/core/model";
+import { createWorkflow } from "../src/core/workflow";
 
 nextEnv.loadEnvConfig(process.cwd(), true);
 const connectionString = process.env.MIGRATION_DATABASE_URL;
@@ -12,6 +18,7 @@ if (!connectionString || !runtimeRole || !/^[a-z_][a-z0-9_]*$/.test(runtimeRole)
 
 const pool = new Pool({ connectionString });
 const client = await pool.connect();
+let migrated = false;
 try {
   await client.query("BEGIN");
   await client.query("SELECT pg_advisory_xact_lock(9217321)");
@@ -39,11 +46,23 @@ try {
     GRANT USAGE ON SEQUENCE audit_events_id_seq TO "${runtimeRole}";
   `);
   await client.query("COMMIT");
-  console.log("RTC schema, synthetic users and default workflow are ready.");
+  migrated = true;
 } catch (error) {
   await client.query("ROLLBACK");
   throw error;
 } finally {
   client.release();
+  if (!migrated) await pool.end();
+}
+
+try {
+  const store = postgresStore(pool);
+  const operations = (await store.read.actors()).find((actor) => actor.role === "operations");
+  if (operations && can(await store.read.settings(), operations, "intake.write")) {
+    const workflow = createWorkflow({ store, rates: mockRate(exampleRate), id: randomUUID, now: () => new Date() });
+    await importDemoInbox(workflow, operations, "STARTER");
+  }
+  console.log("RTC schema, synthetic users, workflow and sample inbox are ready.");
+} finally {
   await pool.end();
 }

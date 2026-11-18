@@ -53,7 +53,7 @@ export function createWorkflow({ store, rates, now, id }: WorkflowDependencies) 
       return settings;
     },
 
-    createEnquiry(actor: Actor, source: unknown, input: unknown) {
+    createEnquiry(actor: Actor, source: unknown, input: unknown, origin: "manual" | "import" = "manual") {
       return execute(actor, "intake.write", async (tx, settings, at) => {
         const sourceRef = validate(referenceSchema, source, "Use a reference containing letters, digits, dots, dashes or underscores.").toUpperCase();
         const data = validate(intakeSchema, input, "One or more fields exceed the supported length.");
@@ -68,7 +68,7 @@ export function createWorkflow({ store, rates, now, id }: WorkflowDependencies) 
           }
           throw new WorkflowError("conflict", "That reference already exists with different details. Open the existing enquiry to edit it.");
         }
-        await tx.append({ entityId: enquiry.id, action: "Enquiry created", actor, at,
+        await tx.append({ entityId: enquiry.id, action: origin === "import" ? "Enquiry imported" : "Enquiry created", actor, at,
           summary: enquiry.issues.length ? "Sent to Needs Review." : "Ready to quote.", changes: { data, issues: enquiry.issues } });
         return enquiry;
       });

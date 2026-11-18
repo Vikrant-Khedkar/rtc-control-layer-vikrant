@@ -20,7 +20,9 @@ npm run db:setup
 npm run dev
 ```
 
-Open the printed address, enter as Operations and select **Guided tour**. Follow each action and role switch. The tour creates actual synthetic records you can inspect afterward. To work manually, select **Load synthetic sample** under **New enquiry** instead. Installations with an existing Postgres server can skip Docker and provide their own dedicated demo database, owner URL and separate runtime role. Run `db/local-role.sql` only on a local demo database, or create a restricted runtime role using a locally generated secret. Setup is safe to rerun on the same dedicated database. It seeds missing users and settings without resetting existing state.
+Open the printed address, enter as Operations and select **Guided tour → Start at the enquiry inbox**. The inbox starts with complete and incomplete synthetic enquiries. The tour adds hints to the normal screens. Select **Simulate incoming enquiries** to load a fresh batch, or **New enquiry** for manual intake.
+
+Installations with an existing Postgres server can skip Docker and provide their own dedicated demo database, owner URL and separate runtime role. Run `db/local-role.sql` only on a local demo database, or create a restricted runtime role using a locally generated secret. Setup is safe to rerun on the same dedicated database. It seeds users, settings and a starter inbox without resetting existing work.
 
 [Narrated walkthrough (5:56)](docs/rtc-walkthrough.mp4) · [Walkthrough script](docs/walkthrough.md) · [Business journey](docs/rtc-business-journey.svg) · [Detailed flow](docs/rtc-flow.svg) · [Architecture](docs/rtc-architecture.svg)
 

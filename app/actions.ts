@@ -4,12 +4,13 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { importDemoInbox } from "../demo/inbox";
 import { intakeFields, permissions, roles, statusKeys, WorkflowError } from "../src/core/model";
 import { services } from "../src/server/services";
 import { codeMatches, cookieName, currentActor, demoMode, requireActor } from "../src/server/session";
 
 export type ActionResult = { error?: string; success?: string };
-type Command = "create" | "edit" | "draft" | "approve" | "advance" | "raise" | "resolve" | "close" | "config";
+type Command = "import-inbox" | "create" | "edit" | "draft" | "approve" | "advance" | "raise" | "resolve" | "close" | "config";
 
 function value(form: FormData, name: string) {
   const field = form.get(name);
@@ -35,7 +36,7 @@ export async function chooseRole(_: ActionResult, form: FormData): Promise<Actio
     httpOnly: true, secure: mode === "protected", sameSite: "lax", path: "/", expires: session.expiresAt,
   });
   const returnTo = value(form, "returnTo");
-  const safePath = /^\/(?:config|(?:enquiries|jobs)\/[a-f0-9-]{36}|tour(?:\?enquiry=[a-f0-9-]{36})?)$/;
+  const safePath = /^\/(?:config|tour|(?:enquiries|jobs)\/[a-f0-9-]{36})$/;
   redirect(safePath.test(returnTo) ? returnTo : "/");
 }
 
@@ -44,14 +45,25 @@ export async function signOut() {
   const token = jar.get(cookieName)?.value;
   if (token && await currentActor()) await services().identity.revoke(token);
   jar.delete(cookieName);
+  jar.delete("rtc_guide");
   redirect("/");
+}
+
+export async function startTour() {
+  await requireActor();
+  (await cookies()).set("rtc_guide", "1", { httpOnly: true, sameSite: "lax", path: "/", secure: demoMode() === "protected" });
+  redirect("/#enquiry-heading");
+}
+
+export async function endTour() {
+  await requireActor();
+  (await cookies()).delete("rtc_guide");
 }
 
 export async function runCommand(_: ActionResult, form: FormData): Promise<ActionResult> {
   const actor = await requireActor();
   const { workflow } = services();
   const command = value(form, "command") as Command;
-  const guided = value(form, "guided") === "1";
   const data = {
     customer: value(form, "customer"), billOfLading: value(form, "billOfLading"),
     arrivalPort: value(form, "arrivalPort"), eta: value(form, "eta"), consignee: value(form, "consignee"),
@@ -60,9 +72,12 @@ export async function runCommand(_: ActionResult, form: FormData): Promise<Actio
   let needsReview = false;
   try {
     switch (command) {
+      case "import-inbox":
+        await importDemoInbox(workflow, actor, recordId(form, "batchId"));
+        break;
       case "create": {
         const enquiry = await workflow.createEnquiry(actor, value(form, "sourceRef"), data);
-        destination = guided ? `/tour?enquiry=${enquiry.id}` : `/enquiries/${enquiry.id}`;
+        destination = `/enquiries/${enquiry.id}`;
         break;
       }
       case "edit":
@@ -73,7 +88,7 @@ export async function runCommand(_: ActionResult, form: FormData): Promise<Actio
         break;
       case "approve": {
         const job = await workflow.approveQuote(actor, recordId(form, "quoteId"));
-        destination = guided ? `/tour?enquiry=${job.enquiryId}` : `/jobs/${job.id}`;
+        destination = `/jobs/${job.id}`;
         break;
       }
       case "advance":
@@ -118,5 +133,5 @@ export async function runCommand(_: ActionResult, form: FormData): Promise<Actio
   revalidatePath("/", "layout");
   if (destination) redirect(destination);
   if (needsReview) return { error: "Correct the enquiry details before drafting the quote." };
-  return { success: "Saved." };
+  return { success: command === "import-inbox" ? "Sample enquiries imported." : "Saved." };
 }

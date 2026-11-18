@@ -34,3 +34,10 @@ export const exampleEnquiry: Intake = {
 };
 
 export const exampleRate = { cents: 125_000, currency: "INR" };
+
+export const inboxEnquiries: Intake[] = [
+  { customer: "Orchid Homewares (Demo)", billOfLading: "SYN-BL-4101", arrivalPort: "Nhava Sheva", eta: "2026-12-16", consignee: "Orchid Homewares (Demo)" },
+  { customer: "Delta Components (Demo)", billOfLading: "SYN-BL-4102", arrivalPort: "Mundra", eta: "2026-12-18", consignee: "Delta Components (Demo)" },
+  { customer: "Cedar Instruments (Demo)", billOfLading: "SYN-BL-4103", arrivalPort: "", eta: "2026-12-19", consignee: "Cedar Instruments (Demo)" },
+  { customer: "Harbor Textiles (Demo)", billOfLading: "", arrivalPort: "Chennai", eta: "", consignee: "Harbor Textiles (Demo)" },
+];
