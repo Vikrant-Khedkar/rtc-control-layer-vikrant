@@ -4,7 +4,7 @@ Enter as **Operations**, choose **Guided tour** and select **Start at the enquir
 
 The setup seeds two complete and two incomplete enquiries. **Simulate incoming enquiries** loads a fresh batch. The assessment allows manual creation or import. The demo simulates a feed, and each imported enquiry belongs to Operations. Operations updates verified details and leaves an enquiry in **Needs Review** while anything is missing. Assignment in this walkthrough is for an exception on an active job.
 
-Use the role dropdown in the header and click **Switch role**. The app keeps you on the same enquiry or job. Allow about 6 minutes.
+Use **Switch profile** in the header, select a demo user, then choose **Continue as** that user. The app brings you back to the same enquiry or job. Allow about 6 minutes.
 
 | Time | What to show |
 |---|---|

@@ -4,9 +4,10 @@ import { AlertCircle, ClipboardList, PackageCheck, Ship } from "lucide-react";
 import { currentActor, demoMode } from "../src/server/session";
 import { services } from "../src/server/services";
 import { billingState, can, WorkflowError } from "../src/core/model";
-import { CommandForm, IntakeForm, RoleForm } from "./forms";
+import { CommandForm, IntakeForm } from "./forms";
 import { TourHint } from "./tour/hint";
 import { JobTable } from "./jobs/table";
+import { ProfilePicker } from "./profiles/picker";
 import { AccessDenied, Badge, Brand, Empty, Heading, Shell } from "./ui";
 
 export const dynamic = "force-dynamic";
@@ -15,13 +16,13 @@ export default async function Dashboard() {
   const mode = demoMode();
   const actor = await currentActor();
   if (!actor) {
-    return <main className="mx-auto flex min-h-screen max-w-xl items-center px-4 py-12">
+    return <main className="mx-auto flex min-h-screen max-w-3xl items-center px-4 py-12">
       <div className="panel w-full p-6 sm:p-9">
         <Brand />
         <h1 className="mt-8 text-3xl font-bold tracking-tight">Sea Import Customs</h1>
         <p className="quiet mt-2 mb-6">Track an enquiry through quote approval, operational milestones and billing closure. All records in this assessment are synthetic.</p>
         {mode === "disabled" ? <p className="text-sm font-semibold text-wine">The demo is unavailable on this deployment.</p>
-          : <RoleForm gate={mode === "protected"} returnTo="/" />}
+          : <ProfilePicker gate={mode === "protected"} returnTo="/" />}
       </div>
     </main>;
   }
@@ -69,7 +70,7 @@ export default async function Dashboard() {
           {actor.role === "manager" ? "Open an enquiry awaiting approval and review the draft quote."
             : actor.role === "accounts" ? "Open a billing-ready job in the Jobs list to review and close it."
               : actor.role === "operations" ? "Open a sample enquiry. Pick Ready to quote for the direct path, or Needs Review to see how missing details are handled."
-                : "Switch to Operations in the header to review an incoming enquiry."}
+                : "Use Switch profile in the header to continue as Operations."}
         </TourHint>
       </div>
       {enquiries.length ? <div className="overflow-x-auto"><table className="data-table min-w-[650px]">

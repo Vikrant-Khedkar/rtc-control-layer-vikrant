@@ -2,28 +2,9 @@
 
 import { useActionState, useState, type ReactNode } from "react";
 import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
-import { chooseRole, runCommand } from "./actions";
+import { runCommand } from "./actions";
 import { intakeFields, intakeLabels, permissions, roles, statusKeys, type Intake, type Role, type Settings } from "../src/core/model";
 import { exampleEnquiry } from "../demo/fixtures";
-
-export function RoleForm({ role, gate, returnTo }: { role?: Role; gate?: boolean; returnTo: string }) {
-  const [state, action, pending] = useActionState(chooseRole, {});
-  return (
-    <form action={action} className="flex flex-wrap items-end gap-2">
-      <input type="hidden" name="returnTo" value={returnTo} />
-      {gate && <label className="min-w-52 flex-1"><span className="label">Reviewer access code</span>
-        <input required name="code" type="password" autoComplete="off" className="field" /></label>}
-      <label><span className={role ? "sr-only" : "label"}>Demo role</span>
-        <select name="role" defaultValue={role ?? "operations"} className="field capitalize">
-          {roles.map((item) => <option key={item} value={item}>{item[0].toUpperCase() + item.slice(1)}</option>)}
-        </select></label>
-      <button type="submit" className={role ? "button" : "button primary"} disabled={pending}>
-        {role ? "Switch role" : "Enter workspace"}
-      </button>
-      {state.error && <p role="alert" className="w-full text-sm text-wine">{state.error}</p>}
-    </form>
-  );
-}
 
 export function CommandForm({ command, ids, label, children, secondary, className }: {
   command: string; ids?: Record<string, string>; label: string; children?: ReactNode; secondary?: boolean; className?: string;

@@ -6,6 +6,10 @@ import { services } from "./services";
 
 export const cookieName = "rtc_session";
 
+export function safeReturnPath(path: unknown) {
+  return typeof path === "string" && /^\/(?:config|tour|jobs(?:\?view=queue)?|(?:enquiries|jobs)\/[a-f0-9-]{36})$/.test(path) ? path : "/";
+}
+
 export function demoMode(): "local" | "protected" | "disabled" {
   if (!process.env.VERCEL && process.env.RTC_LOCAL_DEMO === "1") return "local";
   if (process.env.VERCEL && process.env.VERCEL_ENV !== "preview") return "disabled";

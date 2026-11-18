@@ -108,7 +108,7 @@ export function jobActionFor(job: Job, settings: Settings, actor: Actor) {
   const billing = billingState(job);
   if (billing === "closed") return undefined;
   if (billing === "billing_ready" && can(settings, actor, "billing.close")) {
-    return { title: "Review and close billing", detail: "Milestones are complete and there are no open exceptions.", label: "Review billing", section: "billing" };
+    return { title: "Review and close billing", detail: "Milestones are complete and there are no open exceptions.", label: "Review billing", section: "job-actions" };
   }
   const issue = openExceptions(job).find((item) => item.ownerId === actor.id);
   if (issue && can(settings, actor, "exception.manage")) {
@@ -116,9 +116,17 @@ export function jobActionFor(job: Job, settings: Settings, actor: Actor) {
   }
   const stage = currentStage(job);
   if (stage && job.ownerId === actor.id && can(settings, actor, "job.advance")) {
-    return { title: `Complete: ${stage.label}`, detail: "You own this job.", label: "Work on job", section: "milestones" };
+    return { title: `Complete: ${stage.label}`, detail: "You own this job.", label: "Work on job", section: "job-actions" };
   }
   return undefined;
+}
+
+export function jobLane(job: Job): "new" | "working" | "attention" | "ready" | "closed" {
+  const state = billingState(job);
+  if (state === "closed") return "closed";
+  if (state === "billing_ready") return "ready";
+  if (openExceptions(job).length) return "attention";
+  return job.milestones.some((step) => step.completedAt) ? "working" : "new";
 }
 
 export function stageDeadline(job: Job): Date | undefined {

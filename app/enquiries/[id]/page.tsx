@@ -29,7 +29,7 @@ export default async function EnquiryPage({ params }: { params: Promise<{ id: st
     <TourHint title={job ? "Open the approved job" : quote ? "Review the internal quote" : "Review the enquiry details"}>
       {job ? "Open the job to see its milestones, exceptions and billing status."
         : quote ? (actor.role === "manager" ? "Check the mock rate, margin and quote total, then approve the draft."
-          : "Switch to Manager in the header to review and approve the draft on this page.")
+          : "Use Switch profile in the header to continue as Manager and approve this draft.")
           : enquiry.issues.length ? "Operations can use Edit details to correct verified information. Leave the enquiry in Needs Review if the information is still missing."
             : "Check the enquiry fields below. If they’re complete, use Draft internal quote."}
     </TourHint>

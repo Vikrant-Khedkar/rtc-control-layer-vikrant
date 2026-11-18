@@ -3,21 +3,37 @@ import type { WorkStore } from "../src/core/ports";
 import type { createWorkflow } from "../src/core/workflow";
 import { exampleEnquiry } from "./fixtures";
 
-const examples: { ref: string; data: Intake; scenario: "milestone" | "exception" | "billing" }[] = [
+const examples: { ref: string; data: Intake; completed: number; exception?: true }[] = [
   {
     ref: "DEMO-JOB-DOCUMENTS",
     data: { ...exampleEnquiry, customer: "Atlas Hardware (Demo)", billOfLading: "SYN-BL-5101", consignee: "Atlas Hardware (Demo)" },
-    scenario: "milestone",
+    completed: 0,
   },
   {
     ref: "DEMO-JOB-CUSTOMS-QUERY",
     data: { ...exampleEnquiry, customer: "Marigold Appliances (Demo)", billOfLading: "SYN-BL-5102", consignee: "Marigold Appliances (Demo)" },
-    scenario: "exception",
+    completed: 0,
+    exception: true,
   },
   {
     ref: "DEMO-JOB-BILLING",
     data: { ...exampleEnquiry, customer: "Juniper Warehousing (Demo)", billOfLading: "SYN-BL-5103", consignee: "Juniper Warehousing (Demo)" },
-    scenario: "billing",
+    completed: Infinity,
+  },
+  {
+    ref: "DEMO-JOB-NEW-IMPORT",
+    data: { ...exampleEnquiry, customer: "Silverline Parts (Demo)", billOfLading: "SYN-BL-5104", consignee: "Silverline Parts (Demo)" },
+    completed: 0,
+  },
+  {
+    ref: "DEMO-JOB-CLEARANCE",
+    data: { ...exampleEnquiry, customer: "Pinecrest Tools (Demo)", billOfLading: "SYN-BL-5105", consignee: "Pinecrest Tools (Demo)" },
+    completed: 1,
+  },
+  {
+    ref: "DEMO-JOB-RELEASE",
+    data: { ...exampleEnquiry, customer: "Bluewater Ceramics (Demo)", billOfLading: "SYN-BL-5106", consignee: "Bluewater Ceramics (Demo)" },
+    completed: 2,
   },
 ];
 
@@ -30,22 +46,21 @@ export async function seedDemoJobs(
   const settings = await store.read.settings();
   if (!can(settings, operations, "intake.write") || !can(settings, operations, "quote.draft") ||
     !can(settings, manager, "quote.approve")) return;
-  for (const { ref, data, scenario } of examples) {
-    if (scenario === "exception" && !can(settings, operations, "exception.manage")) continue;
-    if (scenario === "billing" && !can(settings, operations, "job.advance")) continue;
+  for (const { ref, data, completed, exception } of examples) {
+    if (exception && !can(settings, operations, "exception.manage")) continue;
+    if (completed && !can(settings, operations, "job.advance")) continue;
 
     const enquiry = await workflow.createEnquiry(operations, ref, data, "import");
     const quote = await workflow.draftQuote(operations, enquiry.id);
     if (!quote || await store.read.jobByQuote(quote.id)) continue;
     const job = await workflow.approveQuote(manager, quote.id);
-    if (scenario === "exception") {
+    if (exception) {
       await workflow.raiseException(operations, job.id, {
         description: "Customs document query", ownerId: operations.id,
         recovery: "Verify the replacement commercial invoice placeholder and record the outcome.",
       });
     }
-    if (scenario === "billing") {
-      for (const milestone of job.milestones) await workflow.advanceJob(operations, job.id, milestone.id);
-    }
+    const count = Number.isFinite(completed) ? Math.min(completed, job.milestones.length - 1) : job.milestones.length;
+    for (const milestone of job.milestones.slice(0, count)) await workflow.advanceJob(operations, job.id, milestone.id);
   }
 }

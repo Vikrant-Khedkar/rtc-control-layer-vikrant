@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { ArrowLeft, Boxes, BriefcaseBusiness, Compass, LayoutDashboard, LogOut, Settings2, Ship } from "lucide-react";
+import { ArrowLeft, ArrowRightLeft, Boxes, BriefcaseBusiness, Compass, LayoutDashboard, LogOut, Settings2, Ship } from "lucide-react";
 import { signOut } from "./actions";
-import { RoleForm } from "./forms";
 import type { Actor, Audit } from "../src/core/model";
 
 export function Brand() {
@@ -20,7 +19,9 @@ export function Shell({ actor, path, children }: { actor: Actor; path: string; c
           <Link href="/" aria-label="RTC Logistics home"><Brand /></Link>
           <div className="flex flex-wrap items-center gap-3">
             <div className="hidden text-right sm:block"><p className="text-sm font-semibold">{actor.name}</p><p className="text-xs text-muted capitalize">{actor.role} · Demo</p></div>
-            <RoleForm key={actor.role} role={actor.role} returnTo={path} />
+            <Link href={`/profiles?next=${encodeURIComponent(path)}`} className="button">
+              <ArrowRightLeft size={15} aria-hidden /> Switch profile
+            </Link>
             <form action={signOut}><button type="submit" className="button !px-2.5" aria-label="Exit demo"><LogOut size={16} /></button></form>
           </div>
         </div>

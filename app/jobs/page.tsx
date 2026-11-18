@@ -1,19 +1,23 @@
 import Link from "next/link";
+import { Columns3, ListChecks } from "lucide-react";
 import { billingState, jobActionFor, WorkflowError } from "../../src/core/model";
 import { services } from "../../src/server/services";
 import { requireActor } from "../../src/server/session";
 import { AccessDenied, Badge, Heading, Shell, ShortId } from "../ui";
 import { JobTable } from "./table";
+import { JobBoard } from "./board";
 
 export const metadata = { title: "Jobs" };
 
-export default async function JobsPage() {
-  const actor = await requireActor();
+export default async function JobsPage({ searchParams }: { searchParams: Promise<{ view?: string | string[] }> }) {
+  const [actor, query] = await Promise.all([requireActor(), searchParams]);
+  const queue = query.view === "queue";
+  const path = queue ? "/jobs?view=queue" : "/jobs";
   const view = await services().workflow.view(actor).catch((error: unknown) => {
     if (error instanceof WorkflowError && error.code === "forbidden") return undefined;
     throw error;
   });
-  if (!view) return <Shell actor={actor} path="/jobs"><AccessDenied /></Shell>;
+  if (!view) return <Shell actor={actor} path={path}><AccessDenied /></Shell>;
 
   const [jobs, people] = await Promise.all([view.records.list("jobs"), view.records.actors()]);
   const users = new Map(people.map((person) => [person.id, person.name]));
@@ -24,8 +28,16 @@ export default async function JobsPage() {
   const actionIds = new Set(actions.map(({ job }) => job.id));
   const otherJobs = jobs.filter((job) => billingState(job) !== "closed" && !actionIds.has(job.id));
   const closedJobs = jobs.filter((job) => billingState(job) === "closed");
-  return <Shell actor={actor} path="/jobs">
+  return <Shell actor={actor} path={path}>
     <Heading title="Jobs" text="Pick up work assigned to your role and see what’s waiting on the rest of the team." />
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <nav aria-label="Jobs display" className="flex gap-2">
+        <Link href="/jobs" aria-current={!queue ? "page" : undefined} className={`button ${!queue ? "primary" : ""}`}><Columns3 size={16} /> Board</Link>
+        <Link href="/jobs?view=queue" aria-current={queue ? "page" : undefined} className={`button ${queue ? "primary" : ""}`}><ListChecks size={16} /> My queue</Link>
+      </nav>
+      <Link href="/#enquiry-heading" className="text-sm font-semibold text-wine">View enquiry inbox</Link>
+    </div>
+    {!queue ? <JobBoard jobs={jobs} users={users} settings={view.settings} actor={actor} /> : <>
     <section aria-labelledby="action-heading">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <h2 id="action-heading" className="text-lg font-semibold">Needs your action</h2>
@@ -49,7 +61,6 @@ export default async function JobsPage() {
     <section className="panel overflow-hidden">
       <div className="pad flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-semibold">Other open jobs</h2>
-        <Link href="/#enquiry-heading" className="text-sm font-semibold text-wine">View enquiry inbox</Link>
       </div>
       <JobTable jobs={otherJobs} users={users} labels={view.settings.labels} emptyMessage="No other open jobs." />
     </section>
@@ -57,5 +68,6 @@ export default async function JobsPage() {
       <div className="pad"><h2 className="font-semibold">Closed jobs</h2></div>
       <JobTable jobs={closedJobs} users={users} labels={view.settings.labels} />
     </section>}
+    </>}
   </Shell>;
 }

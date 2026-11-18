@@ -6,7 +6,7 @@ import { importDemoInbox } from "../demo/inbox";
 import { seedDemoJobs } from "../demo/jobs";
 import { mockRate } from "../src/adapters/mock-rate";
 import { postgresDemoIdentity, postgresStore } from "../src/adapters/postgres";
-import { billingState, currentStage, jobActionFor } from "../src/core/model";
+import { billingState, currentStage, jobActionFor, jobLane } from "../src/core/model";
 import { createWorkflow } from "../src/core/workflow";
 
 if (!process.env.TEST_DATABASE_URL) throw new Error("Set TEST_DATABASE_URL or run npm run test:local.");
@@ -44,17 +44,26 @@ describe("Sea Import Customs on Postgres", () => {
     const incoming = await sample("DEMO-JOB-DOCUMENTS");
     const exception = await sample("DEMO-JOB-CUSTOMS-QUERY");
     const billing = await sample("DEMO-JOB-BILLING");
-    expect(jobActionFor(incoming, settings, operations)?.section).toBe("milestones");
+    expect(jobActionFor(incoming, settings, operations)?.label).toBe("Work on job");
     expect(jobActionFor(incoming, settings, accounts)).toBeUndefined();
     expect(jobActionFor(exception, settings, operations)?.section).toBe("exceptions");
-    expect(jobActionFor(billing, settings, accounts)?.section).toBe("billing");
+    expect(jobActionFor(billing, settings, accounts)?.label).toBe("Review billing");
+    expect(jobLane(incoming)).toBe("new");
+    expect(jobLane(exception)).toBe("attention");
+    expect(jobLane(billing)).toBe("ready");
+    expect(jobLane(await sample("DEMO-JOB-NEW-IMPORT"))).toBe("new");
+    expect(jobLane(await sample("DEMO-JOB-CLEARANCE"))).toBe("working");
+    expect(currentStage(await sample("DEMO-JOB-RELEASE"))?.label).toBe("Release confirmed");
     await workflow.advanceJob(operations, incoming.id, currentStage(incoming)!.id);
     await seedDemoJobs(workflow, store, operations, manager);
     expect(currentStage(await sample("DEMO-JOB-DOCUMENTS"))?.label).toBe("Customs cleared");
+    expect(jobLane(await sample("DEMO-JOB-DOCUMENTS"))).toBe("working");
     await finish(incoming.id);
     const ready = await sample("DEMO-JOB-DOCUMENTS");
     expect(jobActionFor(ready, settings, operations)).toBeUndefined();
-    expect(jobActionFor(ready, settings, accounts)?.section).toBe("billing");
+    expect(jobActionFor(ready, settings, accounts)?.label).toBe("Review billing");
+    await workflow.closeJob(accounts, ready.id);
+    expect(jobLane(await sample("DEMO-JOB-DOCUMENTS"))).toBe("closed");
   });
 
   it("imports complete and incomplete enquiries and safely replays the same inbox batch", async () => {
