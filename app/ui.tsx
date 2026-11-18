@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRightLeft, Boxes, BriefcaseBusiness, Compass, LayoutDashboard, LogOut, Settings2, Ship } from "lucide-react";
+import { ArrowLeft, ArrowRightLeft, Boxes, BriefcaseBusiness, ChevronDown, Compass, LayoutDashboard, LogOut, Settings2, Ship } from "lucide-react";
 import { signOut } from "./actions";
 import type { Actor, Audit } from "../src/core/model";
 
@@ -90,19 +90,50 @@ export function Details({ entries }: { entries: Record<string, React.ReactNode> 
   </dl>;
 }
 
+const auditDate = new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeZone: "Asia/Kolkata" });
+const auditTime = new Intl.DateTimeFormat("en-IN", { timeStyle: "medium", timeZone: "Asia/Kolkata" });
+const auditRow = "grid grid-cols-[5.25rem_minmax(0,1fr)_1rem] items-start gap-3 px-4 py-3 sm:grid-cols-[6rem_minmax(0,1fr)_1rem] sm:px-6";
+
 export function History({ events }: { events: Audit[] }) {
-  return <section className="panel pad">
-    <h2 className="mb-4 font-semibold">Audit history</h2>
-    {events.length ? <ol className="divide-y divide-line">{events.map((event) => <li key={event.id} className="py-3 first:pt-0 last:pb-0">
-      <div className="flex flex-wrap items-baseline justify-between gap-1">
-        <h3 className="text-sm font-semibold">{event.action}</h3>
-        <span className="text-xs text-muted">{time(event.at)} IST</span>
-      </div>
-      <p className="quiet mt-1"><span className="font-medium text-ink">{event.actor.name}</span> <span className="capitalize">({event.actor.role})</span> · {event.summary}</p>
-      {event.changes && <details className="mt-2 text-xs text-muted"><summary>Change details</summary>
-        <pre className="mt-2 overflow-auto rounded-lg bg-canvas p-3">{JSON.stringify(event.changes, null, 2)}</pre>
-      </details>}
-    </li>)}</ol> : <p className="quiet">No activity yet.</p>}
+  const days = new Map<string, Audit[]>();
+  for (const event of events) {
+    const date = auditDate.format(new Date(event.at));
+    const day = days.get(date);
+    if (day) day.push(event);
+    else days.set(date, [event]);
+  }
+
+  return <section aria-label="Audit history" className="panel overflow-hidden">
+    <div className="flex items-baseline justify-between gap-3 px-4 py-3.5 sm:px-6">
+      <h2 className="font-semibold">Audit history</h2>
+      {events.length > 0 && <span className="text-xs text-muted">Times in IST</span>}
+    </div>
+    {Array.from(days, ([date, day]) => <div key={date}>
+      <h3 className="border-y border-line bg-canvas px-4 py-2 text-xs font-semibold text-muted sm:px-6">{date}</h3>
+      <ol className="divide-y divide-line">{day.map((event) => {
+        const description = <>
+          <time dateTime={event.at} className="mt-0.5 text-xs whitespace-nowrap tabular-nums text-muted">{auditTime.format(new Date(event.at))}</time>
+          <span className="min-w-0">
+            <span className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+              <span className="text-sm font-semibold">{event.action}</span>
+              <span className="text-xs text-muted">{event.actor.name} · <span className="capitalize">{event.actor.role}</span></span>
+            </span>
+            <span className="mt-0.5 block text-sm break-words text-muted">{event.summary}</span>
+          </span>
+        </>;
+        return <li key={event.id}>
+          {event.changes ? <details className="group">
+            <summary className={`${auditRow} hover:bg-canvas/55 focus-visible:-outline-offset-2 [&::-webkit-details-marker]:hidden`}>
+              {description}
+              <ChevronDown size={15} aria-hidden className="mt-0.5 text-muted group-open:rotate-180" />
+              <span className="sr-only">Change details</span>
+            </summary>
+            <pre className="mx-4 mb-3 overflow-auto rounded-lg bg-canvas p-3 text-xs text-muted sm:mr-6 sm:ml-32">{JSON.stringify(event.changes, null, 2)}</pre>
+          </details> : <div className={auditRow}>{description}</div>}
+        </li>;
+      })}</ol>
+    </div>)}
+    {events.length === 0 && <p className="quiet px-4 pb-4 sm:px-6">No activity yet.</p>}
   </section>;
 }
 
