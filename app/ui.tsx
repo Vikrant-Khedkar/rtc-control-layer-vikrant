@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRightLeft, Boxes, BriefcaseBusiness, Compass, LayoutDashboard, LogOut, Settings2, Ship } from "lucide-react";
+import { ArrowLeft, ArrowRightLeft, Boxes, BriefcaseBusiness, Compass, Inbox, LayoutDashboard, LogOut, Settings2, Ship } from "lucide-react";
 import { signOut } from "./actions";
 import type { Actor, Audit } from "../src/core/model";
 
@@ -11,35 +11,40 @@ export function Brand() {
 }
 
 export function Shell({ actor, path, children }: { actor: Actor; path: string; children: React.ReactNode }) {
-  const admin = actor.role === "admin";
-  return (
-    <div className="min-h-screen">
-      <header className="border-b border-line bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-8">
-          <Link href="/" aria-label="RTC Logistics home"><Brand /></Link>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="hidden text-right sm:block"><p className="text-sm font-semibold">{actor.name}</p><p className="text-xs text-muted capitalize">{actor.role} · Demo</p></div>
-            <Link href={`/profiles?next=${encodeURIComponent(path)}`} className="button">
-              <ArrowRightLeft size={15} aria-hidden /> Switch profile
-            </Link>
-            <form action={signOut}><button type="submit" className="button !px-2.5" aria-label="Exit demo"><LogOut size={16} /></button></form>
-          </div>
-        </div>
-      </header>
-      <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-8">
-        <nav aria-label="Workspace" className="flex flex-wrap items-center gap-2 border-b border-line py-3">
-          <Link href="/" aria-current={path === "/" ? "page" : undefined} className={`button ${path === "/" ? "!border-transparent !bg-rosewash !text-wine" : ""}`}><LayoutDashboard size={16} /> God View</Link>
-          <Link href="/jobs" aria-current={path === "/jobs" ? "page" : undefined}
-            className={`button ${path.startsWith("/jobs") ? "!border-transparent !bg-rosewash !text-wine" : ""}`}><BriefcaseBusiness size={16} /> Jobs</Link>
-          {admin && <Link href="/config" aria-current={path === "/config" ? "page" : undefined} className={`button ${path === "/config" ? "!border-transparent !bg-rosewash !text-wine" : ""}`}><Settings2 size={16} /> Configuration</Link>}
-          <Link href={path.startsWith("/tour") ? path : "/tour"} aria-current={path.startsWith("/tour") ? "page" : undefined}
-            className={`button ${path.startsWith("/tour") ? "!border-transparent !bg-rosewash !text-wine" : ""}`}><Compass size={16} /> Guided tour</Link>
-          <span className="ml-auto hidden text-xs text-muted sm:inline">Sea Import Customs · Synthetic data</span>
+  const pathname = path.split("?")[0];
+  const links = [
+    { href: "/", label: "God View", icon: LayoutDashboard },
+    { href: "/enquiries", label: "Enquiry inbox", icon: Inbox },
+    { href: "/jobs", label: "Jobs", icon: BriefcaseBusiness },
+    ...(actor.role === "admin" ? [{ href: "/config", label: "Configuration", icon: Settings2 }] : []),
+    { href: "/tour", label: "Guided tour", icon: Compass },
+  ];
+  return <div className="min-h-screen">
+    <header className="border-b border-line bg-white">
+      <div className="mx-auto grid max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 px-4 sm:px-8 lg:flex lg:gap-7">
+        <Link href="/" aria-label="RTC Logistics home" className="my-3 w-fit shrink-0"><Brand /></Link>
+        <nav aria-label="Workspace" className="col-span-full row-start-2 flex min-w-0 items-center gap-1 overflow-x-auto border-t border-line lg:flex-1 lg:border-t-0">
+          {links.map(({ href, label, icon: Icon }) => {
+            const active = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+            return <Link key={href} href={href} aria-current={active ? (pathname === href ? "page" : "location") : undefined}
+              className={`inline-flex min-h-12 shrink-0 items-center gap-1.5 border-b-2 px-2 text-sm font-semibold whitespace-nowrap focus-visible:-outline-offset-2 sm:px-3 lg:min-h-16 ${active ? "border-wine text-wine" : "border-transparent text-muted hover:text-ink"} ${href === "/tour" ? "lg:ml-auto" : ""}`}>
+              <Icon size={15} aria-hidden />{label}
+            </Link>;
+          })}
         </nav>
-        <main className="mt-7 space-y-6">{children}</main>
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2 lg:border-l lg:border-line lg:pl-4">
+          <Link href={`/profiles?next=${encodeURIComponent(path)}`} aria-label="Switch profile" title="Switch profile"
+            className="flex min-h-10 items-center gap-2 rounded-lg px-2 text-left hover:bg-canvas">
+            <span><span className="block text-xs font-semibold sm:text-sm">{actor.name}</span>
+              <span className="block text-xs text-muted capitalize">{actor.role} · Demo</span></span>
+            <ArrowRightLeft size={15} aria-hidden className="text-muted" />
+          </Link>
+          <form action={signOut}><button type="submit" className="grid size-10 place-items-center rounded-lg text-muted hover:bg-canvas" aria-label="Exit demo"><LogOut size={16} aria-hidden /></button></form>
+        </div>
       </div>
-    </div>
-  );
+    </header>
+    <main className="mx-auto max-w-7xl space-y-6 px-4 pt-6 pb-12 sm:px-8">{children}</main>
+  </div>;
 }
 
 export function Heading({ title, text, back }: { title: string; text: string; back?: boolean | "jobs" }) {

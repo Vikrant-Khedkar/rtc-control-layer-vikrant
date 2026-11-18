@@ -21,7 +21,6 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   if (!view) return <Shell actor={actor} path={path}><AccessDenied /></Shell>;
 
   const [jobs, people] = await Promise.all([view.records.list("jobs"), view.records.actors()]);
-  const users = new Map(people.map((person) => [person.id, person.name]));
   const actions = jobs.flatMap((job) => {
     const action = jobActionFor(job, view.settings, actor);
     return action ? [{ job, action }] : [];
@@ -36,10 +35,10 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
         <Link href="/jobs" aria-current={!queue ? "page" : undefined} className={`button ${!queue ? "primary" : ""}`}><Columns3 size={16} /> Board</Link>
         <Link href="/jobs?view=queue" aria-current={queue ? "page" : undefined} className={`button ${queue ? "primary" : ""}`}><ListChecks size={16} /> My queue</Link>
       </nav>
-      <Link href="/#enquiry-heading" className="text-sm font-semibold text-wine">View enquiry inbox</Link>
+      <Link href="/enquiries" className="text-sm font-semibold text-wine">View enquiry inbox</Link>
     </div>
     {!queue && <p className="quiet">An enquiry becomes a job after the Manager approves its internal quote. <strong>Ready to start</strong> means the quote is approved and the first job milestone is pending.</p>}
-    {!queue ? <JobBoard jobs={jobs} users={users} settings={view.settings} actor={actor} /> : <>
+    {!queue ? <JobBoard jobs={jobs} people={people} settings={view.settings} actor={actor} /> : <>
     <section aria-labelledby="action-heading">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <h2 id="action-heading" className="text-lg font-semibold">Needs your action</h2>
@@ -64,11 +63,11 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
       <div className="pad flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-semibold">Other open jobs</h2>
       </div>
-      <JobTable jobs={otherJobs} users={users} labels={view.settings.labels} emptyMessage="No other open jobs." />
+      <JobTable jobs={otherJobs} people={people} labels={view.settings.labels} emptyMessage="No other open jobs." />
     </section>
     {closedJobs.length > 0 && <section className="panel overflow-hidden">
       <div className="pad"><h2 className="font-semibold">Closed jobs</h2></div>
-      <JobTable jobs={closedJobs} users={users} labels={view.settings.labels} />
+      <JobTable jobs={closedJobs} people={people} labels={view.settings.labels} />
     </section>}
     </>}
   </Shell>;

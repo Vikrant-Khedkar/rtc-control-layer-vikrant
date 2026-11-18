@@ -2,6 +2,7 @@ import Link from "next/link";
 import { jobSectionPath } from "./sections";
 import { ArrowUpRight } from "lucide-react";
 import { currentStage, jobActionFor, jobLane, openExceptions, type Actor, type Job, type Settings } from "../../src/core/model";
+import { jobHandoff, WaitingOn } from "../handoff";
 import { Badge, ShortId } from "../ui";
 
 const lanes = [
@@ -12,7 +13,7 @@ const lanes = [
   { key: "closed", label: "Closed", marker: "bg-stone-400" },
 ] as const;
 
-export function JobBoard({ jobs, users, settings, actor }: { jobs: Job[]; users: Map<string, string>; settings: Settings; actor: Actor }) {
+export function JobBoard({ jobs, people, settings, actor }: { jobs: Job[]; people: Actor[]; settings: Settings; actor: Actor }) {
   const byLane = new Map<string, Job[]>();
   for (const job of jobs) {
     const key = jobLane(job);
@@ -36,6 +37,7 @@ export function JobBoard({ jobs, users, settings, actor }: { jobs: Job[]; users:
               const action = jobActionFor(job, settings, actor);
               const stage = currentStage(job);
               const issue = openExceptions(job)[0];
+              const handoff = jobHandoff(job, people);
               const customer = job.data.customer || "Sea Import job";
               return <article key={job.id} className="panel space-y-2.5 p-3">
                 <div className="flex flex-wrap items-center justify-between gap-1">
@@ -46,7 +48,7 @@ export function JobBoard({ jobs, users, settings, actor }: { jobs: Job[]; users:
                 <dl className="space-y-1 text-xs">
                   <div><dt className="sr-only">Current milestone</dt><dd>{stage ? `Next: ${stage.label}` : "Milestones complete"}</dd></div>
                   {issue && <div><dt className="sr-only">Open exception</dt><dd className="text-amber-900">{issue.description}</dd></div>}
-                  <div><dt className="sr-only">Job owner</dt><dd className="text-muted">{users.get(job.ownerId) ?? "Unassigned"}</dd></div>
+                  {handoff && <div><dt className="sr-only">Waiting on</dt><dd><WaitingOn handoff={handoff} /></dd></div>}
                 </dl>
                 {job.operationalStatus && <Badge text={job.operationalStatus.label} />}
                 <Link href={`/jobs/${job.id}${action ? jobSectionPath(action.section) : ""}`} className="flex min-h-9 items-center justify-between gap-1 rounded-md border border-line px-2.5 text-xs font-semibold text-wine hover:bg-rosewash"

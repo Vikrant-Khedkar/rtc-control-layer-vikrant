@@ -7,7 +7,7 @@ import { services } from "./services";
 export const cookieName = "rtc_session";
 
 export function safeReturnPath(path: unknown) {
-  return typeof path === "string" && /^\/(?:config|tour|jobs(?:\?view=queue)?|enquiries\/[a-f0-9-]{36}|jobs\/[a-f0-9-]{36}(?:\?tab=(?:exceptions|documents|billing|history))?)$/.test(path) ? path : "/";
+  return typeof path === "string" && /^\/(?:config|tour|jobs(?:\?view=queue)?|enquiries(?:\/[a-f0-9-]{36})?|jobs\/[a-f0-9-]{36}(?:\?tab=(?:exceptions|documents|billing|history))?)$/.test(path) ? path : "/";
 }
 
 export function demoMode(): "local" | "protected" | "disabled" {
@@ -22,9 +22,8 @@ export function codeMatches(code: string) {
 }
 
 export const currentActor = cache(async () => {
-  if (demoMode() === "disabled") return undefined;
   const token = (await cookies()).get(cookieName)?.value;
-  if (!token || !/^[\w-]{43}$/.test(token)) return undefined;
+  if (demoMode() === "disabled" || !token || !/^[\w-]{43}$/.test(token)) return undefined;
   return services().identity.resolve(token);
 });
 

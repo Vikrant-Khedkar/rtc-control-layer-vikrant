@@ -20,7 +20,7 @@ npm run db:setup
 npm run dev
 ```
 
-Open the printed address, enter as Operations and select **Guided tour → Start at the enquiry inbox**. The inbox starts with complete and incomplete synthetic enquiries. The tour adds hints to the normal screens. Select **Simulate incoming enquiries** to load a fresh batch, or **New enquiry** for manual intake.
+Open the printed address, enter as **Operations** and select **Enquiry inbox → Simulate incoming enquiries**. Open a fresh **Ready to quote** enquiry, check the details and select **Draft internal quote**. The record shows **Awaiting Manager**. Switch profiles on the same record to approve the quote as Manager. The job opens as **Awaiting Operations**. Switch back to Operations and complete the milestones. Once the job shows **Awaiting Accounts**, switch to Accounts, open **Billing** and close it. **Guided tour** adds hints to the same screens.
 
 Use **Jobs** in the navigation to open a specific record and update its status or complete a milestone. As Admin, add an option under **Configuration → Custom job statuses** and save. Operations can select that status on any open job, and the change appears in the audit history and God View. Billing readiness continues to follow milestone completion and exception resolution.
 

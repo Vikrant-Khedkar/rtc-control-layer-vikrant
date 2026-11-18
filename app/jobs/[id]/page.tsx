@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { ArrowLeft, Check, ChevronDown, FileText } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, FileText } from "lucide-react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { billingState, can, currentStage, openExceptions, stageDeadline, WorkflowError } from "../../../src/core/model";
 import { services } from "../../../src/server/services";
 import { requireActor } from "../../../src/server/session";
 import { CommandForm } from "../../forms";
+import { jobHandoff, WaitingOn } from "../../handoff";
 import { TourHint } from "../../tour/hint";
 import { AccessDenied, Badge, Details, History, Shell, ShortId, time } from "../../ui";
 import { MilestoneTimeline } from "./milestone-timeline";
@@ -42,26 +43,33 @@ export default async function JobPage({ params, searchParams }: {
   const canClose = billing === "billing_ready" && can(settings, actor, "billing.close");
   const assignedIssue = canManageExceptions ? openIssues.find((issue) => issue.ownerId === actor.id) : undefined;
   const completed = job.milestones.filter((step) => step.completedAt).length;
+  const handoff = jobHandoff(job, people);
   const statusLabel = job.operationalStatus?.label ?? "No custom status";
   return <Shell actor={actor} path={path}>
-    <header className="space-y-4">
-      <Link href="/jobs" className="inline-flex items-center gap-2 text-sm font-semibold text-wine"><ArrowLeft size={15} /> Back to Jobs</Link>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold text-muted"><ShortId prefix="JOB" id={id} /> · Sea Import Customs</p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight">{job.data.customer || "Shipment job"}</h1>
-          <p className="quiet mt-1">{names.get(job.ownerId) ?? "Unassigned"} · {job.data.arrivalPort || "Port pending"}</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Badge text={settings.labels[billing]} tone={billing === "billing_ready" ? "good" : "neutral"} />
-          {tab !== "work" && job.operationalStatus && <Badge text={statusLabel} />}
-          {openIssues.length > 0 && <Link href={`${base}?tab=exceptions`}><Badge text={`${openIssues.length} open exception${openIssues.length === 1 ? "" : "s"}`} tone="warn" /></Link>}
+    <header className="panel">
+      <div className="pad space-y-3">
+        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+          <Link href="/jobs" className="font-semibold text-wine">Jobs</Link>
+          <ChevronRight size={13} aria-hidden /><span aria-current="page"><ShortId prefix="JOB" id={id} /></span>
+        </nav>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{job.data.customer || "Shipment job"}</h1>
+            <p className="quiet mt-1">Sea Import Customs · {job.data.arrivalPort || "Port pending"}</p>
+          </div>
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            <div className="flex flex-wrap gap-2">
+              <Badge text={settings.labels[billing]} tone={billing === "billing_ready" ? "good" : "neutral"} />
+              {tab !== "work" && job.operationalStatus && <Badge text={statusLabel} />}
+            </div>
+            {handoff && <WaitingOn handoff={handoff} />}
+          </div>
         </div>
       </div>
-      <nav aria-label="Job detail sections" className="flex flex-wrap gap-1 border-b border-line">
+      <nav aria-label="Job detail sections" className="flex gap-1 overflow-x-auto border-t border-line px-3 sm:px-5">
         {tabs.map((item) => <Link key={item} href={item === "work" ? base : `${base}?tab=${item}`}
           aria-current={item === tab ? "page" : undefined}
-          className={`border-b-2 px-3 py-2.5 text-sm font-semibold capitalize ${item === tab ? "border-wine text-wine" : "border-transparent text-muted hover:text-ink"}`}>
+          className={`flex min-h-11 shrink-0 items-center border-b-2 px-3 text-sm font-semibold capitalize whitespace-nowrap focus-visible:-outline-offset-2 ${item === tab ? "border-wine text-wine" : "border-transparent text-muted hover:text-ink"}`}>
           {item}{item === "exceptions" && openIssues.length > 0 ? ` (${openIssues.length})` : ""}
         </Link>)}
       </nav>
@@ -139,7 +147,7 @@ export default async function JobPage({ params, searchParams }: {
       </section>
       <section className="panel pad space-y-4">
         <h2 className="font-semibold">Shipment details</h2>
-        <Details entries={{ "Bill of lading": job.data.billOfLading, ETA: job.data.eta, Consignee: job.data.consignee }} />
+        <Details entries={{ "Job owner": names.get(job.ownerId) ?? "Unassigned", "Bill of lading": job.data.billOfLading, ETA: job.data.eta, Consignee: job.data.consignee }} />
         <Link href={`/enquiries/${job.enquiryId}`} className="inline-block text-sm font-semibold text-wine">View enquiry and approved quote</Link>
       </section>
     </div>}

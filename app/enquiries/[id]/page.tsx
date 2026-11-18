@@ -1,12 +1,14 @@
 import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { can, intakeFields, intakeLabels, WorkflowError } from "../../../src/core/model";
 import { services } from "../../../src/server/services";
 import { requireActor } from "../../../src/server/session";
 import { CommandForm, IntakeForm } from "../../forms";
+import { enquiryHandoff, jobHandoff, WaitingOn } from "../../handoff";
 import { TourHint } from "../../tour/hint";
-import { AccessDenied, Badge, Details, Heading, History, money, Shell } from "../../ui";
+import { AccessDenied, Badge, Details, History, money, Shell } from "../../ui";
 
 export default async function EnquiryPage({ params }: { params: Promise<{ id: string }> }) {
   const [actor, { id }] = await Promise.all([requireActor(), params]);
@@ -24,8 +26,19 @@ export default async function EnquiryPage({ params }: { params: Promise<{ id: st
     records.auditFor(quote ? [id, quote.id] : [id]), quote ? records.jobByQuote(quote.id) : undefined, records.actors(),
   ]);
   const status = enquiry.issues.length ? "needs_review" : "ready";
+  const handoff = job ? jobHandoff(job, people) : enquiryHandoff(enquiry, quote, people);
   return <Shell actor={actor} path={path}>
-    <Heading title={enquiry.sourceRef} text={`${enquiry.data.customer || "Enquiry"} · Sea Import Customs`} back />
+    <header className="panel pad space-y-3">
+      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
+        <Link href="/enquiries" className="font-semibold text-wine">Enquiry inbox</Link>
+        <ChevronRight size={13} aria-hidden /><span aria-current="page" className="break-all">{enquiry.sourceRef}</span>
+      </nav>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div><h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{enquiry.data.customer || "Enquiry"}</h1>
+          <p className="quiet mt-1">Sea Import Customs</p></div>
+        {handoff && <div className="rounded-lg bg-canvas px-3 py-2"><WaitingOn handoff={handoff} /></div>}
+      </div>
+    </header>
     <TourHint title={job ? "Open the approved job" : quote ? "Review the internal quote" : "Review the enquiry details"}>
       {job ? "Open the job to see its milestones, exceptions and billing status."
         : quote ? (actor.role === "manager" ? "Check the mock rate, margin and quote total, then approve the draft."
@@ -60,7 +73,10 @@ export default async function EnquiryPage({ params }: { params: Promise<{ id: st
         </> : <>
           <p className="quiet">The draft uses a synthetic rate and the configured gross margin.</p>
           {enquiry.issues.length ? <p className="quiet">Complete the missing or invalid details before drafting a quote.</p>
-            : can(settings, actor, "quote.draft") && <CommandForm command="draft" ids={{ enquiryId: id }} label="Draft internal quote" />}
+            : can(settings, actor, "quote.draft") && <>
+              <p className="quiet">Check the enquiry details, then draft the quote for Manager approval.</p>
+              <CommandForm command="draft" ids={{ enquiryId: id }} label="Draft internal quote" />
+            </>}
         </>}
       </section>
     </div>

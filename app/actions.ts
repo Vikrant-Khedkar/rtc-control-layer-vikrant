@@ -50,7 +50,7 @@ export async function signOut() {
 export async function startTour() {
   await requireActor();
   (await cookies()).set("rtc_guide", "1", { httpOnly: true, sameSite: "lax", path: "/", secure: demoMode() === "protected" });
-  redirect("/#enquiry-heading");
+  redirect("/enquiries");
 }
 
 export async function endTour() {
