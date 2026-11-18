@@ -2,13 +2,39 @@
 
 A working assessment for one synthetic Sea Import Customs workflow. Operations takes an enquiry through quoting and job milestones. A Manager approves the internal quote. Accounts closes the billing-ready job.
 
-[Open the live demo](https://rtc-control-layer-vikrant-dtwabyx39-vikrants-projects-acd5a87f.vercel.app?_vercel_share=u8SeaTTkl3RnRlYJm7vC9UNGXVBhDsHo) · [Watch the 2:23 subtitled walkthrough](https://drive.google.com/file/d/1DRR3ENP2uJjJXr95-aXav0xM4ees2uuQ/view?usp=drivesdk) · [Architecture diagram](docs/rtc-architecture.svg)
+[Open the live demo](https://rtc-control-layer-vikrant-dtwabyx39-vikrants-projects-acd5a87f.vercel.app?_vercel_share=u8SeaTTkl3RnRlYJm7vC9UNGXVBhDsHo) · [Watch the 2:23 subtitled walkthrough](https://drive.google.com/file/d/1DRR3ENP2uJjJXr95-aXav0xM4ees2uuQ/view?usp=drivesdk) · [Architecture diagram](#architecture)
 
 ## Assumptions
 
 The sample defaults are editable. Intake requires customer, bill of lading reference, arrival port and estimated arrival in ISO date format. The optional consignee field can be made required. The three milestones are **Documents reviewed → Customs cleared → Release confirmed**, with 24 hours per stage starting when it becomes current. One illustrative ₹1,250.00 rate uses a 15% gross margin (`price = cost / (1 - margin)`, rounded to paise). Every open exception blocks billing readiness. One shared synthetic workspace is visible to all four demo users, subject to the role permission matrix.
 
 The hosted demo uses synthetic fixtures. The brief's submission sections disagree on repository visibility, deadline and video length. The sample fields, milestone names and rate in this build are assumptions.
+
+## Architecture
+
+```mermaid
+---
+config:
+  flowchart:
+    wrappingWidth: 224
+    rankSpacing: 38
+---
+flowchart TB
+    accTitle: RTC Logistics Control Layer architecture
+    accDescr: Next.js resolves demo sessions and calls a TypeScript workflow. The workflow uses storage and rate interfaces backed by Neon Postgres and a synthetic rate adapter.
+
+    Roles["Operations · Manager<br/>Accounts · Admin"] --> Web
+    Web["Next.js on Vercel Preview<br/>God View · Jobs · Admin<br/>Server pages and actions"] -->|Actor and request| Workflow
+    Web -->|IdentityProvider| Postgres
+
+    Workflow["Framework-independent TypeScript<br/>Intake · Quotes · Jobs<br/>Milestones · Exceptions · Billing"] -->|WorkStore| Postgres
+    Workflow -->|RateProvider| Mock["Synthetic rate adapter"]
+    Workflow -.-> Future["Planned integration adapters<br/>ICEGATE · ELMS/Winsoft<br/>Carriers · Accounting"]
+
+    Postgres["Postgres adapter"] --> Neon[("Dedicated Neon Postgres<br/>Sessions · Workflow records<br/>Configuration · Audit events")]
+```
+
+The TypeScript workflow checks role permissions and commits each change with its append-only audit event. The detailed diagram also maps document placeholders, reporting, and deployment monitoring. [Detailed architecture diagram](docs/rtc-architecture.svg)
 
 ## Run locally
 
