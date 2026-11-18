@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Check, Circle, FileText } from "lucide-react";
+import { ArrowLeft, Check, ChevronDown, FileText } from "lucide-react";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { billingState, can, currentStage, openExceptions, stageDeadline, WorkflowError } from "../../../src/core/model";
@@ -8,6 +8,7 @@ import { requireActor } from "../../../src/server/session";
 import { CommandForm } from "../../forms";
 import { TourHint } from "../../tour/hint";
 import { AccessDenied, Badge, Details, History, Shell, ShortId, time } from "../../ui";
+import { MilestoneTimeline } from "./milestone-timeline";
 
 const tabs = ["work", "exceptions", "documents", "billing", "history"] as const;
 
@@ -35,15 +36,13 @@ export default async function JobPage({ params, searchParams }: {
   const deadline = stageDeadline(job);
   const billing = billingState(job);
   const openIssues = openExceptions(job);
-  const assignedIssue = openIssues.find((issue) => issue.ownerId === actor.id);
   const overdue = deadline && deadline.getTime() < Date.now();
   const canManageExceptions = !job.closedAt && can(settings, actor, "exception.manage");
   const canUpdate = !job.closedAt && can(settings, actor, "job.advance");
   const canClose = billing === "billing_ready" && can(settings, actor, "billing.close");
-  const nextAction = job.closedAt ? "Job closed"
-    : billing === "billing_ready" ? "Accounts to review and close"
-      : assignedIssue ? assignedIssue.recovery
-        : stage ? `Complete milestone: ${stage.label}` : "Resolve open exceptions";
+  const assignedIssue = canManageExceptions ? openIssues.find((issue) => issue.ownerId === actor.id) : undefined;
+  const completed = job.milestones.filter((step) => step.completedAt).length;
+  const statusLabel = job.operationalStatus?.label ?? "No custom status";
   return <Shell actor={actor} path={path}>
     <header className="space-y-4">
       <Link href="/jobs" className="inline-flex items-center gap-2 text-sm font-semibold text-wine"><ArrowLeft size={15} /> Back to Jobs</Link>
@@ -55,7 +54,7 @@ export default async function JobPage({ params, searchParams }: {
         </div>
         <div className="flex flex-wrap gap-2">
           <Badge text={settings.labels[billing]} tone={billing === "billing_ready" ? "good" : "neutral"} />
-          {job.operationalStatus && <Badge text={job.operationalStatus.label} />}
+          {tab !== "work" && job.operationalStatus && <Badge text={statusLabel} />}
           {openIssues.length > 0 && <Link href={`${base}?tab=exceptions`}><Badge text={`${openIssues.length} open exception${openIssues.length === 1 ? "" : "s"}`} tone="warn" /></Link>}
         </div>
       </div>
@@ -73,46 +72,71 @@ export default async function JobPage({ params, searchParams }: {
           : "Use Switch profile to continue as Accounts and close the job.")
           : actor.role !== "operations" ? "Use Switch profile to continue as Operations and work on the job."
             : openIssues.length ? "Complete the remaining milestones and record the recovery in Exceptions. Billing stays blocked until the open exception is resolved."
-              : "Complete the current milestone. While work is active, use Raise exception in Exceptions to test assigning a customs issue and recording its recovery."}
+              : "Select Mark complete on the current milestone. To record a customs issue, open Exceptions and select Raise exception."}
     </TourHint>
     {tab === "work" && <div className="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
-      <div className="space-y-5">
-        <section id="job-actions" className="panel pad space-y-3">
-          <h2 className="text-xs font-semibold text-wine">{job.closedAt ? "Outcome" : "Next action"}</h2>
-          <p className="text-lg font-semibold">{nextAction}</p>
-          {deadline && <div className="flex flex-wrap items-center gap-2">
-            <Badge text={overdue ? "Overdue" : "On track"} tone={overdue ? "danger" : "good"} />
-            <p className="quiet">SLA deadline · {time(deadline)} IST</p>
+      <section id="job-actions" className="panel" aria-labelledby="milestones">
+        <div className="pad">
+          <MilestoneTimeline completed={completed} total={job.milestones.length}>
+            {job.milestones.map((step, index) => {
+              const isCurrent = step.id === stage?.id;
+              return <li key={step.id} aria-current={isCurrent ? "step" : undefined}
+                className={`group grid grid-cols-[1.75rem_minmax(0,1fr)] gap-3 rounded-lg px-3 py-2.5 ${isCurrent ? "bg-rosewash/45 ring-1 ring-inset ring-wine/15" : ""}`}>
+                <div className="relative flex justify-center">
+                  <span aria-hidden className={`relative z-10 grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold ${step.completedAt
+                    ? "bg-emerald-50 text-emerald-800"
+                    : isCurrent ? "bg-wine text-white" : "border border-line bg-white text-muted"}`}>
+                    {step.completedAt ? <Check size={15} /> : index + 1}
+                  </span>
+                  <span aria-hidden className="absolute top-7 -bottom-6 w-px bg-line group-last:hidden" />
+                </div>
+                <div className="flex min-w-0 flex-col items-start justify-between gap-2.5 sm:flex-row sm:items-center">
+                  <div className="min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                      <h3 tabIndex={isCurrent ? -1 : undefined} className={`text-sm font-semibold break-words ${isCurrent || step.completedAt ? "text-ink" : "text-muted"}`}>{step.label}</h3>
+                      {isCurrent && <span className="text-xs font-semibold text-wine">Current</span>}
+                    </div>
+                    {step.completedAt ? <p className="text-xs text-muted">
+                      Completed · <time dateTime={step.completedAt}>{time(step.completedAt)} IST</time>
+                    </p> : isCurrent && deadline ? <div className="flex flex-wrap items-center gap-1.5">
+                      <Badge text={overdue ? "Overdue" : "On track"} tone={overdue ? "danger" : "good"} />
+                      <time dateTime={deadline.toISOString()} className="text-xs text-muted">Due {time(deadline)} IST</time>
+                    </div> : <p className="text-xs text-muted">Upcoming</p>}
+                  </div>
+                  {isCurrent && canUpdate && <CommandForm command="advance" ids={{ jobId: id, stageId: step.id }}
+                    label="Mark complete" secondary={Boolean(assignedIssue)} className="space-y-2 sm:shrink-0" />}
+                </div>
+              </li>;
+            })}
+          </MilestoneTimeline>
+          {openIssues.length > 0 && <div className="mt-4 rounded-lg bg-amber-50 px-3 py-2.5 text-sm text-amber-900">
+            <Link className="font-semibold underline underline-offset-2" href={`${base}?tab=exceptions`}>Review open exceptions</Link>
+            <p className="mt-1 text-xs">{assignedIssue?.recovery ?? "Resolve open exceptions before billing."}</p>
           </div>}
-          {openIssues.length > 0 && <p className="quiet"><Link className="font-semibold text-wine" href={`${base}?tab=exceptions`}>Review open exceptions</Link> · Billing is blocked until resolved.</p>}
-          {canUpdate && stage && <CommandForm key={stage.id} command="advance" ids={{ jobId: id, stageId: stage.id }} label="Complete current milestone" secondary={Boolean(assignedIssue)} />}
-          {billing === "billing_ready" && <Link href={`${base}?tab=billing`} className={canClose ? "button primary" : "button"}>Review billing</Link>}
-          {canUpdate && <details className="mt-4 border-t border-line pt-3">
-            <summary className="text-sm font-semibold text-wine">Change operational status</summary>
-            <CommandForm command="set-job-status" ids={{ jobId: id }} label="Save job status" secondary className="mt-3 flex flex-wrap items-end gap-2">
-              <label className="block min-w-40 flex-1"><span className="label">Job status</span>
-                <select className="field" name="jobStatusId" defaultValue={job.operationalStatus?.id ?? ""}>
-                  <option value="">No custom status</option>
-                  {settings.jobStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}
-                  {job.operationalStatus && !settings.jobStatuses.some((status) => status.id === job.operationalStatus?.id) &&
-                    <option value={job.operationalStatus.id}>{job.operationalStatus.label} (retired)</option>}
-                </select>
-              </label>
-              {settings.jobStatuses.length === 0 && <p className="quiet w-full">An Admin can add statuses in Configuration.</p>}
-            </CommandForm>
-          </details>}
-        </section>
-        <section id="milestones" className="panel pad space-y-4">
-          <h2 className="font-semibold">Operational milestones <span className="ml-1 text-xs font-normal text-muted">Workflow v{job.configVersion}</span></h2>
-          <ol className="space-y-3">{job.milestones.map((step) => <li key={step.id} className="flex items-center gap-3 text-sm">
-            <span className={`grid size-7 shrink-0 place-items-center rounded-full ${step.completedAt ? "bg-emerald-50 text-emerald-800" : "bg-stone-100 text-muted"}`}>
-              {step.completedAt ? <Check size={15} /> : <Circle size={12} />}
-            </span><span className="font-medium">{step.label}</span>
-            {step.completedAt ? <span className="ml-auto text-xs text-muted">{time(step.completedAt)} IST</span>
-              : stage?.id === step.id ? <Badge text="Current" tone="warn" /> : null}
-          </li>)}</ol>
-        </section>
-      </div>
+          {billing === "billing_ready" && <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
+            <p className="quiet">Ready for Accounts to close.</p>
+            <Link href={`${base}?tab=billing`} className={canClose ? "button primary" : "button"}>Review billing</Link>
+          </div>}
+          {job.closedAt && <p className="quiet mt-4">Job closed {time(job.closedAt)} IST.</p>}
+        </div>
+        {canUpdate ? <details className="group border-t border-line px-5 py-3 sm:px-6">
+          <summary className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-sm text-sm [&::-webkit-details-marker]:hidden">
+            <span className="min-w-0 break-words"><span className="font-semibold">Operational status</span> <span className="text-muted">· {statusLabel}</span></span>
+            <span className="flex items-center gap-1 font-semibold text-wine">Edit status <ChevronDown size={15} aria-hidden className="group-open:rotate-180" /></span>
+          </summary>
+          <CommandForm command="set-job-status" ids={{ jobId: id }} label="Save job status" secondary className="mt-3 flex flex-wrap items-end gap-2">
+            <label className="block min-w-40 flex-1"><span className="label">Job status</span>
+              <select className="field" name="jobStatusId" defaultValue={job.operationalStatus?.id ?? ""}>
+                <option value="">No custom status</option>
+                {settings.jobStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}
+                {job.operationalStatus && !settings.jobStatuses.some((status) => status.id === job.operationalStatus?.id) &&
+                  <option value={job.operationalStatus.id}>{job.operationalStatus.label} (retired)</option>}
+              </select>
+            </label>
+            {settings.jobStatuses.length === 0 && <p className="quiet w-full">An Admin can add statuses in Configuration.</p>}
+          </CommandForm>
+        </details> : job.operationalStatus && <p className="quiet border-t border-line px-5 py-3 sm:px-6">Operational status · {statusLabel}</p>}
+      </section>
       <section className="panel pad space-y-4">
         <h2 className="font-semibold">Shipment details</h2>
         <Details entries={{ "Bill of lading": job.data.billOfLading, ETA: job.data.eta, Consignee: job.data.consignee }} />
