@@ -7,7 +7,6 @@ import { services } from "../../../src/server/services";
 import { requireActor } from "../../../src/server/session";
 import { CommandForm } from "../../forms";
 import { jobHandoff, WaitingOn } from "../../handoff";
-import { TourHint } from "../../tour/hint";
 import { AccessDenied, Badge, Details, History, Shell, ShortId, time } from "../../ui";
 import { MilestoneTimeline } from "./milestone-timeline";
 
@@ -74,14 +73,6 @@ export default async function JobPage({ params, searchParams }: {
         </Link>)}
       </nav>
     </header>
-    <TourHint title={billing === "closed" ? "Review the completed job" : billing === "billing_ready" ? "Send the job to Accounts for closure" : "Work through the job"}>
-      {billing === "closed" ? "Find the milestone, exception and closure events on the History tab."
-        : billing === "billing_ready" ? (actor.role === "accounts" ? "Open Billing and select Close job."
-          : "Use Switch profile to continue as Accounts and close the job.")
-          : actor.role !== "operations" ? "Use Switch profile to continue as Operations and work on the job."
-            : openIssues.length ? "Complete the remaining milestones and record the recovery in Exceptions. Billing stays blocked until the open exception is resolved."
-              : "Select Mark complete on the current milestone. To record a customs issue, open Exceptions and select Raise exception."}
-    </TourHint>
     {tab === "work" && <div className="grid items-start gap-5 lg:grid-cols-[1.4fr_1fr]">
       <section id="job-actions" className="panel" aria-labelledby="milestones">
         <div className="pad">
