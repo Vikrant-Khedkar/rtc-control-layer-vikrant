@@ -10,7 +10,7 @@ Use **Switch profile** in the header, select a demo user, then choose **Continue
 |---|---|
 | 0:00–0:40 | Start in the **Enquiry review** column. Open **Orchid Homewares** or **Delta Components** for a complete enquiry and review the details. |
 | 0:40–1:35 | Open **Cedar Instruments** to test **Needs Review**. Verify the missing arrival port reason. Select **Edit details**, enter **Nhava Sheva** as the synthetic arrival port and save. Once it is ready, select **Draft internal quote**. |
-| 1:35–2:20 | Show the card in **Awaiting Manager**. On the same enquiry, switch to Manager, approve the quote, and open the new job in **Ready to start**. Explain the single transaction and one-job constraint. |
+| 1:35–2:20 | Show the card in **Quote approval**. On the same enquiry, switch to Manager, approve the quote, and open the new job in **Job execution**. Explain the single transaction and one-job constraint. |
 | 2:20–3:35 | Switch to Operations. Complete the first milestone. Raise a synthetic customs query, select the Operations assignee and enter a recovery action. Complete the remaining milestones. Billing is still blocked. Enter a resolution note and resolve the issue. |
 | 3:35–4:15 | Switch to Accounts. Show **Billing ready**, close the job and reload. Point out the role, actor, time and details in audit history. |
 | 4:15–5:05 | Switch to Admin. Open Configuration, change the gross margin and save. Switch to Operations and draft a fresh quote. The new draft reflects the change, while the first draft keeps its original total. For example, changing 15% to 20% changes the quote from ₹1,470.59 to ₹1,562.50. |

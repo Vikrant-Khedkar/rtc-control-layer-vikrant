@@ -1,20 +1,20 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import type { ReactNode } from "react";
-import { can, currentStage, jobActionFor, jobLane, openExceptions, type Actor, type Enquiry, type Job, type Quote, type Settings } from "../../src/core/model";
+import { can, currentStage, jobActionFor, jobLane, openExceptions, stageDeadline, type Actor, type Enquiry, type Job, type Quote, type Settings } from "../../src/core/model";
 import { enquiryHandoff, jobHandoff, WaitingOn } from "../handoff";
 import { Badge, ShortId } from "../ui";
 import { jobSectionPath } from "./sections";
 
 const lanes = [
   { key: "enquiry", label: "Enquiry review", marker: "bg-violet-600" },
-  { key: "approval", label: "Awaiting Manager", marker: "bg-indigo-600" },
-  { key: "new", label: "Ready to start", marker: "bg-wine" },
-  { key: "working", label: "In progress", marker: "bg-sky-600" },
-  { key: "attention", label: "Needs attention", marker: "bg-amber-600" },
+  { key: "approval", label: "Quote approval", marker: "bg-indigo-600" },
+  { key: "execution", label: "Job execution", marker: "bg-sky-600" },
   { key: "ready", label: "Billing ready", marker: "bg-emerald-600" },
   { key: "closed", label: "Closed", marker: "bg-stone-400" },
 ] as const;
+
+type RankedCard = { content: ReactNode; needsYou: boolean; hasException?: boolean; order: number };
 
 function BoardCard({ href, label, reference, customer, needsYou, children }: {
   href: string; label: string; reference: ReactNode; customer: string; needsYou: boolean; children: ReactNode;
@@ -38,9 +38,10 @@ function BoardCard({ href, label, reference, customer, needsYou, children }: {
 export function JobBoard({ jobs, enquiries, quoteFor, people, settings, actor, queue }: {
   jobs: Job[]; enquiries: Enquiry[]; quoteFor: Map<string, Quote>; people: Actor[]; settings: Settings; actor: Actor; queue: boolean;
 }) {
-  const cards: Record<(typeof lanes)[number]["key"], ReactNode[]> = {
-    enquiry: [], approval: [], new: [], working: [], attention: [], ready: [], closed: [],
+  const cards: Record<(typeof lanes)[number]["key"], RankedCard[]> = {
+    enquiry: [], approval: [], execution: [], ready: [], closed: [],
   };
+  const now = Date.now();
 
   for (const enquiry of enquiries) {
     const quote = quoteFor.get(enquiry.id);
@@ -51,14 +52,17 @@ export function JobBoard({ jobs, enquiries, quoteFor, people, settings, actor, q
     const customer = enquiry.data.customer || "Enquiry";
     const handoff = enquiryHandoff(enquiry, quote, people);
     const href = `/jobs?${queue ? "view=queue&" : ""}enquiry=${enquiry.id}#selected-enquiry`;
-    cards[quote ? "approval" : "enquiry"].push(
-      <BoardCard key={enquiry.id} href={href} label={`${quote ? "Review quote" : "Review enquiry"} for ${customer}`}
+    cards[quote ? "approval" : "enquiry"].push({
+      needsYou,
+      order: quote ? Date.parse(quote.createdAt) : -Date.parse(enquiry.createdAt),
+      content: <BoardCard key={enquiry.id} href={href} label={`${quote ? "Review quote" : "Review enquiry"} for ${customer}`}
         reference={<ShortId prefix="ENQ" id={enquiry.id} />} customer={customer} needsYou={needsYou}>
         {!quote && <Badge text={settings.labels[missing ? "needs_review" : "ready"]} tone={missing ? "warn" : "neutral"} />}
         {missing && !quote && <p className="text-xs text-amber-900">{enquiry.issues[0]}</p>}
-        {handoff && <p><WaitingOn handoff={handoff} /></p>}
+        {quote && needsYou ? <p className="text-xs font-semibold text-wine">Review quote</p>
+          : handoff && <p><WaitingOn handoff={handoff} /></p>}
       </BoardCard>,
-    );
+    });
   }
 
   for (const job of jobs) {
@@ -68,10 +72,28 @@ export function JobBoard({ jobs, enquiries, quoteFor, people, settings, actor, q
     const issue = openExceptions(job)[0];
     const handoff = jobHandoff(job, people);
     const customer = job.data.customer || "Sea Import job";
-    cards[jobLane(job)].push(
-      <BoardCard key={job.id} href={`/jobs/${job.id}${action ? jobSectionPath(action.section) : ""}`}
+    const status = jobLane(job);
+    const lane = status === "ready" || status === "closed" ? status : "execution";
+    const deadline = stageDeadline(job)?.getTime();
+    const overdue = deadline !== undefined && deadline < now;
+    const billingReadyAt = lane === "ready" ? job.exceptions.reduce(
+      (at, exception) => exception.resolvedAt ? Math.max(at, Date.parse(exception.resolvedAt)) : at,
+      Date.parse(job.stageStartedAt),
+    ) : undefined;
+    cards[lane].push({
+      needsYou: Boolean(action),
+      hasException: Boolean(issue),
+      order: job.closedAt ? -Date.parse(job.closedAt)
+        : issue ? Date.parse(issue.openedAt) : deadline ?? billingReadyAt ?? Date.parse(job.createdAt),
+      content: <BoardCard key={job.id} href={`/jobs/${job.id}${action ? jobSectionPath(action.section) : ""}`}
         label={`${action?.label ?? "View job"} for ${customer}`} reference={<ShortId prefix="JOB" id={job.id} />}
         customer={customer} needsYou={Boolean(action)}>
+        {lane === "execution" && (status === "new" || issue || overdue) &&
+          <div className="flex flex-wrap gap-1.5">
+            {status === "new" && <Badge text="Ready to start" />}
+            {issue && <Badge text="Exception open" tone="warn" />}
+            {overdue && <Badge text="Overdue" tone="danger" />}
+          </div>}
         <dl className="space-y-1 text-xs">
           <div><dt className="sr-only">Current milestone</dt><dd>{stage ? `Next: ${stage.label}` : "Milestones complete"}</dd></div>
           {issue && <div><dt className="sr-only">Open exception</dt><dd className="text-amber-900">{issue.description}</dd></div>}
@@ -81,7 +103,7 @@ export function JobBoard({ jobs, enquiries, quoteFor, people, settings, actor, q
           {job.operationalStatus.label}
         </p>}
       </BoardCard>,
-    );
+    });
   }
 
   const visible = queue ? lanes.filter((lane) => cards[lane.key].length > 0) : lanes;
@@ -89,7 +111,11 @@ export function JobBoard({ jobs, enquiries, quoteFor, people, settings, actor, q
   return <section aria-label="Job board" className="overflow-x-auto overscroll-x-contain pb-2">
     <div className={`grid grid-flow-col gap-3 ${queue ? "auto-cols-[14rem]" : "auto-cols-[minmax(12rem,1fr)]"}`}>
       {visible.map((lane) => {
-        const entries = cards[lane.key];
+        const entries = cards[lane.key].sort((a, b) =>
+          Number(b.needsYou) - Number(a.needsYou) ||
+          Number(Boolean(b.hasException)) - Number(Boolean(a.hasException)) ||
+          a.order - b.order,
+        );
         const label = lane.key === "ready" ? settings.labels.billing_ready : lane.key === "closed" ? settings.labels.closed : lane.label;
         return <section className="min-w-0 rounded-xl border border-line bg-stone-100/70 p-2.5" key={lane.key} aria-labelledby={`lane-${lane.key}`}>
           <div className="flex items-center gap-2 px-1 py-2">
@@ -98,7 +124,7 @@ export function JobBoard({ jobs, enquiries, quoteFor, people, settings, actor, q
             <span className="ml-auto text-xs tabular-nums text-muted">{entries.length}</span>
           </div>
           <div className="space-y-2.5">
-            {entries}
+            {entries.map(({ content }) => content)}
             {!entries.length && <p className="px-1 py-4 text-xs text-muted">No items</p>}
           </div>
         </section>;
