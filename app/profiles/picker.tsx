@@ -13,7 +13,7 @@ const responsibilities: Record<Role, string> = {
   admin: "Manage milestones, statuses and permissions",
 };
 
-export function ProfilePicker({ current, gate }: { current?: Role; gate?: boolean }) {
+export function ProfilePicker({ current }: { current?: Role }) {
   const [selectedRole, setSelectedRole] = useState<Role>(current ?? "operations");
   const [state, action, pending] = useActionState(chooseRole, {});
   const selected = demoUsers.find((person) => person.role === selectedRole)!;
@@ -34,8 +34,6 @@ export function ProfilePicker({ current, gate }: { current?: Role; gate?: boolea
         {selectedRole === person.role && <Check size={16} className="shrink-0 text-wine" aria-hidden />}
       </label>)}
     </fieldset>
-    {gate && <label className="block"><span className="label">Reviewer access code</span>
-      <input required name="code" type="password" autoComplete="off" className="field" /></label>}
     <button type="submit" className="button primary" disabled={pending || current === selectedRole}>
       {pending ? <><LoaderCircle className="animate-spin motion-reduce:animate-none" size={16} /> Signing in as {selected.name}…</>
         : <>Continue as {selected.name} <ArrowRight size={16} /></>}

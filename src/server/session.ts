@@ -1,4 +1,3 @@
-import { createHash, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
@@ -10,20 +9,16 @@ export function safeReturnPath(path: unknown) {
   return typeof path === "string" && /^\/(?:\?filter=(?:exceptions|overdue|billing|closed)|config|tour|jobs(?:\?(?:view=queue(?:&enquiry=[a-f0-9-]{36})?|enquiry=[a-f0-9-]{36}))?|enquiries(?:\/[a-f0-9-]{36})?|jobs\/[a-f0-9-]{36}(?:\?tab=(?:exceptions|documents|billing|history))?)$/.test(path) ? path : "/";
 }
 
-export function demoMode(): "local" | "protected" | "disabled" {
-  if (!process.env.VERCEL && process.env.RTC_LOCAL_DEMO === "1") return "local";
-  if (process.env.VERCEL && process.env.VERCEL_ENV !== "preview") return "disabled";
-  return (process.env.RTC_DEMO_ACCESS_CODE?.length ?? 0) >= 24 ? "protected" : "disabled";
-}
+export const secureDemoCookies = Boolean(process.env.VERCEL);
 
-export function codeMatches(code: string) {
-  const digest = (value: string) => createHash("sha256").update(value).digest();
-  return timingSafeEqual(digest(code), digest(process.env.RTC_DEMO_ACCESS_CODE ?? ""));
+export function isDemoEnabled() {
+  if (process.env.VERCEL) return process.env.VERCEL_ENV === "preview" && process.env.RTC_PUBLIC_DEMO === "1";
+  return process.env.RTC_LOCAL_DEMO === "1";
 }
 
 export const currentActor = cache(async () => {
   const token = (await cookies()).get(cookieName)?.value;
-  if (demoMode() === "disabled" || !token || !/^[\w-]{43}$/.test(token)) return undefined;
+  if (!isDemoEnabled() || !token || !/^[\w-]{43}$/.test(token)) return undefined;
   return services().identity.resolve(token);
 });
 

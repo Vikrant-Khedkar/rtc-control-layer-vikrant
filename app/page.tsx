@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, CircleAlert, Clock3, Inbox, PackageCheck, Ship } from "lucide-react";
-import { currentActor, demoMode } from "../src/server/session";
+import { currentActor, isDemoEnabled } from "../src/server/session";
 import { services } from "../src/server/services";
 import { WorkflowError } from "../src/core/model";
 import { JobTable } from "./jobs/table";
@@ -14,7 +14,6 @@ const filters = ["exceptions", "overdue", "billing", "closed"] as const;
 const filterIcons = { open: Ship, exceptions: CircleAlert, overdue: Clock3, billing: PackageCheck };
 
 export default async function Dashboard({ searchParams }: { searchParams: Promise<{ filter?: string | string[] }> }) {
-  const mode = demoMode();
   const actor = await currentActor();
   if (!actor) {
     return <main className="mx-auto flex min-h-screen max-w-3xl items-center px-4 py-12">
@@ -22,8 +21,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         <Brand />
         <h1 className="mt-8 text-3xl font-bold tracking-tight">Sea Import Customs</h1>
         <p className="quiet mt-2 mb-6">Track an enquiry through quote approval, operational milestones and billing closure. All records in this assessment are synthetic.</p>
-        {mode === "disabled" ? <p className="text-sm font-semibold text-wine">The demo is unavailable on this deployment.</p>
-          : <ProfilePicker gate={mode === "protected"} />}
+        {isDemoEnabled() ? <ProfilePicker /> : <p className="text-sm font-semibold text-wine">The demo is unavailable on this deployment.</p>}
       </div>
     </main>;
   }

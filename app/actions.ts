@@ -7,7 +7,7 @@ import { z } from "zod";
 import { importDemoInbox } from "../demo/inbox";
 import { intakeFields, permissions, roles, statusKeys, WorkflowError } from "../src/core/model";
 import { services } from "../src/server/services";
-import { codeMatches, cookieName, currentActor, demoMode, requireActor } from "../src/server/session";
+import { cookieName, currentActor, isDemoEnabled, requireActor, secureDemoCookies } from "../src/server/session";
 
 export type ActionResult = { error?: string; success?: string };
 type Command = "import-inbox" | "create" | "edit" | "draft" | "approve" | "advance" | "set-job-status" | "raise" | "resolve" | "close" | "config";
@@ -25,15 +25,11 @@ function recordId(form: FormData, name: string) {
 
 export async function chooseRole(_: ActionResult, form: FormData): Promise<ActionResult> {
   const role = z.enum(roles).safeParse(value(form, "role"));
-  const mode = demoMode();
-  if (!role.success || mode === "disabled") return { error: "The demo is unavailable." };
-  if (mode === "protected" && !(await currentActor()) && !codeMatches(value(form, "code"))) {
-    return { error: "Enter the reviewer access code." };
-  }
+  if (!role.success || !isDemoEnabled()) return { error: "The demo is unavailable." };
   const jar = await cookies();
   const session = await services().identity.switchTo(role.data, jar.get(cookieName)?.value);
   jar.set(cookieName, session.token, {
-    httpOnly: true, secure: mode === "protected", sameSite: "lax", path: "/", expires: session.expiresAt,
+    httpOnly: true, secure: secureDemoCookies, sameSite: "lax", path: "/", expires: session.expiresAt,
   });
   redirect("/");
 }
@@ -49,7 +45,7 @@ export async function signOut() {
 
 export async function startTour() {
   await requireActor();
-  (await cookies()).set("rtc_guide", "1", { httpOnly: true, sameSite: "lax", path: "/", secure: demoMode() === "protected" });
+  (await cookies()).set("rtc_guide", "1", { httpOnly: true, sameSite: "lax", path: "/", secure: secureDemoCookies });
   redirect("/jobs");
 }
 
