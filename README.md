@@ -2,6 +2,8 @@
 
 A working assessment for one synthetic Sea Import Customs workflow. Operations takes an enquiry through quoting and job milestones. A Manager approves the internal quote. Accounts closes the billing-ready job.
 
+[Open the live demo](https://rtc-control-layer-vikrant-dtwabyx39-vikrants-projects-acd5a87f.vercel.app?_vercel_share=u8SeaTTkl3RnRlYJm7vC9UNGXVBhDsHo) · [Watch the 2:23 subtitled walkthrough](https://drive.google.com/file/d/1DRR3ENP2uJjJXr95-aXav0xM4ees2uuQ/view?usp=drivesdk) · [Architecture diagram](docs/rtc-architecture.svg)
+
 ## Assumptions
 
 The sample defaults are editable. Intake requires customer, bill of lading reference, arrival port and estimated arrival in ISO date format. The optional consignee field can be made required. The three milestones are **Documents reviewed → Customs cleared → Release confirmed**, with 24 hours per stage starting when it becomes current. One illustrative ₹1,250.00 rate uses a 15% gross margin (`price = cost / (1 - margin)`, rounded to paise). Every open exception blocks billing readiness. One shared synthetic workspace is visible to all four demo users, subject to the role permission matrix.
@@ -28,7 +30,7 @@ Use **Jobs** in the navigation to open a specific record and update its status o
 
 Installations with an existing Postgres server can skip Docker and provide their own dedicated demo database, owner URL and separate runtime role. Run `db/local-role.sql` only on a local demo database, or create a restricted runtime role using a locally generated secret. Setup is safe to rerun on the same dedicated database. It seeds users, settings and a starter inbox without resetting existing work.
 
-[Example walkthrough (5:56)](docs/rtc-walkthrough.mp4) · [Walkthrough script](docs/walkthrough.md) · [Business journey](docs/rtc-business-journey.svg) · [Detailed flow](docs/rtc-flow.svg) · [Architecture](docs/rtc-architecture.svg)
+[Walkthrough script](docs/walkthrough.md) · [Business journey](docs/rtc-business-journey.svg) · [Detailed flow](docs/rtc-flow.svg)
 
 ## How the modules connect
 
@@ -57,4 +59,6 @@ See [deployment steps](docs/deployment.md). The assessment link opens a choice o
 
 For a future live rollout, replace demo identity with an approved identity provider, enforce organization and shipment-level access, establish data retention and audit export, add backups and restore checks, and vet real integrations and operational acceptance rules. Implement monitoring, reconciliation and operational support before handling live data.
 
-Material dependencies are Next.js, React, Tailwind CSS, Zod, node-postgres, Vercel Functions helpers and Lucide. Vitest and agent-browser support verification. Codex helped plan, write and verify the assessment.
+Material dependencies are Next.js, React, Tailwind CSS, Zod, node-postgres, Vercel Functions helpers and Lucide. Vitest and agent-browser support verification. Codex helped plan, write and verify the assessment. ElevenLabs supplied the narration for the subtitled walkthrough.
+
+**Time spent** was 5 hours.
