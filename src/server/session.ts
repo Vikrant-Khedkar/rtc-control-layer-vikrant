@@ -7,7 +7,7 @@ import { services } from "./services";
 export const cookieName = "rtc_session";
 
 export function safeReturnPath(path: unknown) {
-  return typeof path === "string" && /^\/(?:config|tour|jobs(?:\?(?:view=queue(?:&enquiry=[a-f0-9-]{36})?|enquiry=[a-f0-9-]{36}))?|enquiries(?:\/[a-f0-9-]{36})?|jobs\/[a-f0-9-]{36}(?:\?tab=(?:exceptions|documents|billing|history))?)$/.test(path) ? path : "/";
+  return typeof path === "string" && /^\/(?:\?filter=(?:exceptions|overdue|billing|closed)|config|tour|jobs(?:\?(?:view=queue(?:&enquiry=[a-f0-9-]{36})?|enquiry=[a-f0-9-]{36}))?|enquiries(?:\/[a-f0-9-]{36})?|jobs\/[a-f0-9-]{36}(?:\?tab=(?:exceptions|documents|billing|history))?)$/.test(path) ? path : "/";
 }
 
 export function demoMode(): "local" | "protected" | "disabled" {
