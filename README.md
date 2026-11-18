@@ -22,6 +22,8 @@ npm run dev
 
 Open the printed address, enter as Operations and select **Guided tour → Start at the enquiry inbox**. The inbox starts with complete and incomplete synthetic enquiries. The tour adds hints to the normal screens. Select **Simulate incoming enquiries** to load a fresh batch, or **New enquiry** for manual intake.
 
+Use **Jobs** in the navigation to open a specific record and update its status or complete a milestone. As Admin, add an option under **Configuration → Custom job statuses** and save. Operations can select that status on any open job, and the change appears in the audit history and God View. Billing readiness continues to follow milestone completion and exception resolution.
+
 Installations with an existing Postgres server can skip Docker and provide their own dedicated demo database, owner URL and separate runtime role. Run `db/local-role.sql` only on a local demo database, or create a restricted runtime role using a locally generated secret. Setup is safe to rerun on the same dedicated database. It seeds users, settings and a starter inbox without resetting existing work.
 
 [Narrated walkthrough (5:56)](docs/rtc-walkthrough.mp4) · [Walkthrough script](docs/walkthrough.md) · [Business journey](docs/rtc-business-journey.svg) · [Detailed flow](docs/rtc-flow.svg) · [Architecture](docs/rtc-architecture.svg)

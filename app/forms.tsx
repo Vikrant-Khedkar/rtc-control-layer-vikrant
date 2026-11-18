@@ -65,13 +65,14 @@ export function IntakeForm({ reference, required, existing }: {
 
 const actionLabels: Record<(typeof permissions)[number], string> = {
   read: "View workspace", "intake.write": "Create and edit enquiries", "quote.draft": "Draft quote",
-  "quote.approve": "Approve quote", "job.advance": "Complete milestones", "exception.manage": "Manage exceptions",
+  "quote.approve": "Approve quote", "job.advance": "Update job status and milestones", "exception.manage": "Manage exceptions",
   "billing.close": "Close billing-ready job", "config.manage": "Edit configuration",
 };
 const restricted: Record<string, Role> = { "quote.approve": "manager", "billing.close": "accounts", "config.manage": "admin" };
 
 export function ConfigurationForm({ settings }: { settings: Settings }) {
   const [steps, setSteps] = useState(settings.milestones);
+  const [jobStatuses, setJobStatuses] = useState(settings.jobStatuses);
 
   function move(index: number, offset: number) {
     const next = [...steps];
@@ -100,6 +101,22 @@ export function ConfigurationForm({ settings }: { settings: Settings }) {
         <button type="button" className="button mt-4" disabled={steps.length === 8}
           onClick={() => setSteps([...steps, { id: crypto.randomUUID(), label: "", hours: 24 }])}><Plus size={15} /> Add milestone</button>
       </section>
+      <section className="panel pad">
+        <h2 className="font-semibold">Custom job statuses</h2>
+        <p className="quiet mt-1 mb-4">Operations can apply these statuses on any open job.</p>
+        <div className="max-w-xl space-y-3">
+          {jobStatuses.map((status, index) => <div key={status.id} className="flex items-end gap-2">
+            <input type="hidden" name="customStatusId" value={status.id} />
+            <label className="min-w-0 flex-1"><span className="label">Status name {index + 1}</span>
+              <input name="customStatusLabel" className="field" defaultValue={status.label} maxLength={40} required />
+            </label>
+            <button type="button" className="button !px-2" aria-label={`Remove status ${index + 1}`}
+              onClick={() => setJobStatuses(jobStatuses.filter((item) => item.id !== status.id))}><Trash2 size={16} /></button>
+          </div>)}
+        </div>
+        <button type="button" className="button mt-4" disabled={jobStatuses.length === 20}
+          onClick={() => setJobStatuses([...jobStatuses, { id: crypto.randomUUID(), label: "" }])}><Plus size={15} /> Add status</button>
+      </section>
       <div className="grid gap-5 lg:grid-cols-2">
         <section className="panel pad">
           <h2 className="font-semibold">Intake and pricing</h2>
@@ -113,7 +130,7 @@ export function ConfigurationForm({ settings }: { settings: Settings }) {
             <input className="field" name="margin" type="number" min={0} max={95} step="0.01" required defaultValue={settings.marginBps / 100} /></label>
         </section>
         <section className="panel pad">
-          <h2 className="mb-4 font-semibold">Status labels</h2>
+          <h2 className="mb-4 font-semibold">Built-in status labels</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {statusKeys.map((key) => <label key={key}><span className="label capitalize">{key.replaceAll("_", " ")}</span>
               <input name={`status:${key}`} className="field" defaultValue={settings.labels[key]} required maxLength={40} /></label>)}

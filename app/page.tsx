@@ -1,12 +1,13 @@
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
-import { AlertCircle, ArrowUpRight, ClipboardList, PackageCheck, Ship } from "lucide-react";
+import { AlertCircle, ClipboardList, PackageCheck, Ship } from "lucide-react";
 import { currentActor, demoMode } from "../src/server/session";
 import { services } from "../src/server/services";
-import { billingState, can, currentStage, openExceptions, stageDeadline, WorkflowError } from "../src/core/model";
+import { billingState, can, WorkflowError } from "../src/core/model";
 import { CommandForm, IntakeForm, RoleForm } from "./forms";
 import { TourHint } from "./tour/hint";
-import { AccessDenied, Badge, Brand, Empty, Heading, Shell, ShortId } from "./ui";
+import { JobTable } from "./jobs/table";
+import { AccessDenied, Badge, Brand, Empty, Heading, Shell } from "./ui";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,6 @@ export default async function Dashboard() {
   const users = new Map(people.map((person) => [person.id, person.name]));
   const quoteFor = new Map(quotes.map((quote) => [quote.enquiryId, quote]));
   const jobFor = new Map(jobs.map((job) => [job.enquiryId, job]));
-  const now = Date.now();
   const cards = [
     { label: "Active jobs", count: jobs.filter((job) => billingState(job) === "active").length, icon: Ship },
     { label: "Needs review", count: enquiries.filter((enquiry) => enquiry.issues.length).length, icon: AlertCircle },
@@ -52,24 +52,8 @@ export default async function Dashboard() {
       </div>)}
     </div>
     <section className="panel overflow-hidden" aria-labelledby="jobs-heading">
-      <div className="pad"><h2 className="text-lg font-semibold" id="jobs-heading">Jobs</h2></div>
-      {jobs.length ? <div className="overflow-x-auto"><table className="data-table min-w-[1050px]">
-        <thead><tr>{["Job ID", "Customer", "Mode", "Current stage", "Owner", "SLA", "Exceptions", "Next action", "Billing"].map((label) => <th key={label} scope="col">{label}</th>)}</tr></thead>
-        <tbody>{jobs.map((job) => {
-          const stage = currentStage(job);
-          const issues = openExceptions(job);
-          const billing = billingState(job);
-          const overdue = Number(stageDeadline(job)) < now;
-          return <tr key={job.id}>
-            <td><Link className="inline-flex items-center gap-1 text-wine" href={`/jobs/${job.id}`}><ShortId prefix="JOB" id={job.id} /><ArrowUpRight size={13} /></Link></td>
-            <td>{job.data.customer || "—"}</td><td>Sea import</td><td>{stage?.label ?? "Complete"}</td><td>{users.get(job.ownerId) ?? "—"}</td>
-            <td>{stage ? <Badge text={overdue ? "Overdue" : "On track"} tone={overdue ? "danger" : "good"} /> : "—"}</td>
-            <td>{issues.length ? <Badge text={`${issues.length} open`} tone="warn" /> : "—"}</td>
-            <td>{billing === "closed" ? "—" : issues.length ? issues[0].recovery : stage ? `Complete: ${stage.label}` : "Accounts to close job"}</td>
-            <td><Badge text={settings.labels[billing]} tone={billing === "billing_ready" ? "good" : "neutral"} /></td>
-          </tr>;
-        })}</tbody>
-      </table></div> : <Empty message="Approved quotes appear here as jobs." />}
+      <div className="pad flex items-center justify-between gap-2"><h2 className="text-lg font-semibold" id="jobs-heading">Jobs</h2><Link href="/jobs" className="button">Open Jobs workspace</Link></div>
+      <JobTable jobs={jobs} users={users} labels={settings.labels} />
     </section>
     <section className="panel overflow-hidden" aria-labelledby="enquiry-heading">
       <div className="pad space-y-4">

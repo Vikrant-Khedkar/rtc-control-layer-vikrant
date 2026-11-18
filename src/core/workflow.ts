@@ -146,6 +146,22 @@ export function createWorkflow({ store, rates, now, id }: WorkflowDependencies) 
       });
     },
 
+    setJobStatus(actor: Actor, jobId: string, statusId: string) {
+      return execute(actor, "job.advance", async (tx, settings, at) => {
+        const job = await locked(tx, "jobs", jobId);
+        requireOpen(job);
+        const status = settings.jobStatuses.find((item) => item.id === statusId);
+        if (!status && statusId === job.operationalStatus?.id) return;
+        if (statusId && !status) throw new WorkflowError("invalid", "Select a job status from the current configuration.");
+        const before = job.operationalStatus;
+        if (before?.id === status?.id && before?.label === status?.label) return;
+        await tx.update("jobs", { ...job, operationalStatus: status });
+        await tx.append({ entityId: jobId, action: "Job status changed", actor, at,
+          summary: status ? `Set to ${status.label}.` : "Custom status cleared.",
+          changes: { before: before ?? null, after: status ?? null } });
+      });
+    },
+
     raiseException(actor: Actor, jobId: string, input: unknown) {
       return execute(actor, "exception.manage", async (tx, settings, at) => {
         const data = validate(z.object({
@@ -197,7 +213,7 @@ export function createWorkflow({ store, rates, now, id }: WorkflowDependencies) 
     saveConfiguration(actor: Actor, expectedVersion: number, input: unknown) {
       return execute(actor, "config.manage", async (tx, previous, at) => {
         if (previous.version !== expectedVersion) throw new WorkflowError("conflict", "Configuration changed since you opened this page. Reload and try again.");
-        const updates = validate(workflowSchema, input, "Check milestone labels and target hours, margin and status labels.");
+        const updates = validate(workflowSchema, input, "Check milestone labels and target hours, margin and unique job status names.");
         const next = { ...updates, version: previous.version + 1 };
         if (!can(next, actor, "config.manage") || !can(next, actor, "read")) {
           throw new WorkflowError("invalid", "Admin must retain access to the workspace and configuration.");

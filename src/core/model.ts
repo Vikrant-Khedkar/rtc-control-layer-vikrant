@@ -39,6 +39,11 @@ export const workflowSchema = z.object({
     hours: z.number().int().min(1).max(720),
   })).min(1).max(8).refine((steps) => new Set(steps.map((step) => step.id)).size === steps.length, "Milestone IDs must be unique"),
   labels: z.record(z.enum(statusKeys), z.string().trim().min(1).max(40)),
+  jobStatuses: z.array(z.object({
+    id: z.string().uuid(),
+    label: z.string().trim().min(1).max(40),
+  })).max(20).refine((items) => new Set(items.map(({ id }) => id)).size === items.length &&
+    new Set(items.map(({ label }) => label.toLowerCase())).size === items.length, "Job status IDs and names must be unique"),
   grants: z.record(z.enum(roles), z.array(z.enum(permissions)).max(permissions.length)),
 });
 export type Workflow = z.infer<typeof workflowSchema>;
@@ -62,6 +67,7 @@ export type Job = {
   data: Intake; createdAt: string; stageStartedAt: string; configVersion: number;
   milestones: Array<Workflow["milestones"][number] & { completedAt?: string }>;
   exceptions: Exception[];
+  operationalStatus?: Workflow["jobStatuses"][number];
   closedAt?: string;
 };
 export type Audit = {

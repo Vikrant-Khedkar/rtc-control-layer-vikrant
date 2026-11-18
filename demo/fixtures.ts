@@ -20,6 +20,10 @@ export const defaultWorkflow: Settings = {
     needs_review: "Needs Review", ready: "Ready to quote", draft: "Awaiting approval", approved: "Approved",
     active: "Active", billing_ready: "Billing ready", closed: "Closed", open: "Open", resolved: "Resolved",
   },
+  jobStatuses: [
+    { id: "92596f50-eac1-4790-b8bd-167d4f1cda39", label: "Awaiting documents" },
+    { id: "44539100-5452-46fd-950c-4c13c4f48505", label: "Customs query" },
+  ],
   grants: {
     operations: ["read", "intake.write", "quote.draft", "job.advance", "exception.manage"],
     manager: ["read", "quote.approve"],

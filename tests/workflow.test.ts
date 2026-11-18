@@ -117,6 +117,33 @@ describe("Sea Import Customs on Postgres", () => {
     ]));
   });
 
+  it("applies Admin-created job statuses with an audit event and leaves billing rules intact", async () => {
+    const { quote } = await draft();
+    const job = await workflow.approveQuote(manager, quote.id);
+    const initial = await workflow.configuration(admin);
+    const custom = { id: randomUUID(), label: "Awaiting carrier confirmation" };
+    const updated = await workflow.saveConfiguration(admin, initial.version, {
+      ...initial, jobStatuses: [...initial.jobStatuses, custom],
+    });
+    try {
+      await expect(workflow.setJobStatus(accounts, job.id, custom.id)).rejects.toMatchObject({ code: "forbidden" });
+      await expect(workflow.setJobStatus(operations, job.id, randomUUID())).rejects.toMatchObject({ code: "invalid" });
+      await workflow.setJobStatus(operations, job.id, custom.id);
+      const persisted = (await store.read.get("jobs", job.id))!;
+      expect(persisted.operationalStatus).toEqual(custom);
+      expect(currentStage(persisted)).toEqual(currentStage(job));
+      expect(billingState(persisted)).toBe("active");
+      expect((await store.read.auditFor([job.id]))[0]).toMatchObject({
+        action: "Job status changed", actor: operations, changes: { before: null, after: custom },
+      });
+      await finish(job.id);
+      await workflow.closeJob(accounts, job.id);
+      await expect(workflow.setJobStatus(operations, job.id, "")).rejects.toMatchObject({ code: "conflict" });
+    } finally {
+      await workflow.saveConfiguration(admin, updated.version, initial);
+    }
+  });
+
   it("rolls back a job and approval if audit writing fails", async () => {
     const { quote } = await draft();
     const faulty = createWorkflow({ ...dependencies, store: {

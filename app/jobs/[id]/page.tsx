@@ -30,7 +30,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
   const openIssues = job.exceptions.filter((issue) => issue.status === "open");
   const canManageExceptions = !job.closedAt && can(settings, actor, "exception.manage");
   return <Shell actor={actor} path={path}>
-    <Heading title={`JOB-${id.slice(0, 8).toUpperCase()}`} text={`${job.data.customer || "Job"} · Sea Import Customs`} back />
+    <Heading title={`JOB-${id.slice(0, 8).toUpperCase()}`} text={`${job.data.customer || "Job"} · Sea Import Customs`} back="jobs" />
     <TourHint title={billing === "closed" ? "Review the completed job" : billing === "billing_ready" ? "Send the job to Accounts for closure" : "Work through the job"}>
       {billing === "closed" ? "Find the milestone, exception and closure events in Audit history below."
         : billing === "billing_ready" ? (actor.role === "accounts" ? "Review Billing and select Close job."
@@ -45,9 +45,25 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
           <div className="flex justify-between gap-2"><h2 className="font-semibold">Job overview</h2><Badge text={settings.labels[billing]} tone={billing === "billing_ready" ? "good" : "neutral"} /></div>
           <Details entries={{ Owner: names.get(job.ownerId), "Arrival port": job.data.arrivalPort, "Bill of lading": job.data.billOfLading,
             ETA: job.data.eta, "Current stage": stage?.label ?? "Complete", "SLA deadline": deadline ? `${time(deadline)} IST` : undefined,
+            "Job status": job.operationalStatus?.label ?? "No custom status",
             "Next action": job.closedAt ? "Job closed" : openIssues[0]?.recovery ?? (stage ? `Complete: ${stage.label}` : "Accounts to close job"),
             "Source enquiry": <Link href={`/enquiries/${job.enquiryId}`} className="text-wine">View enquiry and quote</Link> }} />
         </section>
+        {!job.closedAt && can(settings, actor, "job.advance") && <section className="panel pad space-y-3">
+          <h2 className="font-semibold">Update job status</h2>
+          <p className="quiet">Use a custom status to tell the team what’s happening with the job. Complete milestones separately below.</p>
+          <CommandForm command="set-job-status" ids={{ jobId: id }} label="Save job status">
+            <label className="block max-w-sm"><span className="label">Job status</span>
+              <select className="field" name="jobStatusId" defaultValue={job.operationalStatus?.id ?? ""}>
+                <option value="">No custom status</option>
+                {settings.jobStatuses.map((status) => <option key={status.id} value={status.id}>{status.label}</option>)}
+                {job.operationalStatus && !settings.jobStatuses.some((status) => status.id === job.operationalStatus?.id) &&
+                  <option value={job.operationalStatus.id}>{job.operationalStatus.label} (retired)</option>}
+              </select>
+            </label>
+            {settings.jobStatuses.length === 0 && <p className="quiet">An Admin can add statuses in Configuration.</p>}
+          </CommandForm>
+        </section>}
         <section className="panel pad space-y-4">
           <h2 className="font-semibold">Operational milestones <span className="ml-1 text-xs font-normal text-muted">Workflow v{job.configVersion}</span></h2>
           <ol className="space-y-3">{job.milestones.map((step) => <li key={step.id} className="flex items-center gap-3 text-sm">

@@ -10,7 +10,7 @@ import { services } from "../src/server/services";
 import { codeMatches, cookieName, currentActor, demoMode, requireActor } from "../src/server/session";
 
 export type ActionResult = { error?: string; success?: string };
-type Command = "import-inbox" | "create" | "edit" | "draft" | "approve" | "advance" | "raise" | "resolve" | "close" | "config";
+type Command = "import-inbox" | "create" | "edit" | "draft" | "approve" | "advance" | "set-job-status" | "raise" | "resolve" | "close" | "config";
 
 function value(form: FormData, name: string) {
   const field = form.get(name);
@@ -36,7 +36,7 @@ export async function chooseRole(_: ActionResult, form: FormData): Promise<Actio
     httpOnly: true, secure: mode === "protected", sameSite: "lax", path: "/", expires: session.expiresAt,
   });
   const returnTo = value(form, "returnTo");
-  const safePath = /^\/(?:config|tour|(?:enquiries|jobs)\/[a-f0-9-]{36})$/;
+  const safePath = /^\/(?:config|tour|jobs|(?:enquiries|jobs)\/[a-f0-9-]{36})$/;
   redirect(safePath.test(returnTo) ? returnTo : "/");
 }
 
@@ -94,6 +94,9 @@ export async function runCommand(_: ActionResult, form: FormData): Promise<Actio
       case "advance":
         await workflow.advanceJob(actor, recordId(form, "jobId"), recordId(form, "stageId"));
         break;
+      case "set-job-status":
+        await workflow.setJobStatus(actor, recordId(form, "jobId"), value(form, "jobStatusId"));
+        break;
       case "raise":
         await workflow.raiseException(actor, recordId(form, "jobId"), {
           description: value(form, "description"), ownerId: value(form, "ownerId"), recovery: value(form, "recovery"),
@@ -109,6 +112,8 @@ export async function runCommand(_: ActionResult, form: FormData): Promise<Actio
         const ids = form.getAll("stepId");
         const labels = form.getAll("stepLabel");
         const hours = form.getAll("stepHours");
+        const jobStatusIds = form.getAll("customStatusId");
+        const jobStatusLabels = form.getAll("customStatusLabel");
         const margin = z.string().trim().regex(/^\d+(\.\d{1,2})?$/).safeParse(value(form, "margin"));
         if (!margin.success) return { error: "Enter a margin with up to two decimal places." };
         await workflow.saveConfiguration(actor, Number(value(form, "version")), {
@@ -116,6 +121,7 @@ export async function runCommand(_: ActionResult, form: FormData): Promise<Actio
           marginBps: Math.round(Number(margin.data) * 100),
           milestones: ids.map((id, index) => ({ id, label: labels[index], hours: Number(hours[index]) })),
           labels: Object.fromEntries(statusKeys.map((key) => [key, value(form, `status:${key}`)])),
+          jobStatuses: jobStatusIds.map((id, index) => ({ id, label: jobStatusLabels[index] })),
           grants: Object.fromEntries(roles.map((role) => [
             role, permissions.filter((permission) => form.has(`grant:${role}:${permission}`)),
           ])),

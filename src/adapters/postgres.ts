@@ -17,7 +17,8 @@ function repository(db: Connection): WorkTransaction {
     async settings(lock) {
       const result = await db.query<{ body: Settings }>(`SELECT body FROM settings${lock ? " FOR UPDATE" : ""}`);
       if (!result.rows[0]) throw new Error("Workflow configuration missing. Run database setup.");
-      return result.rows[0].body;
+      const { body } = result.rows[0];
+      return { ...body, jobStatuses: body.jobStatuses ?? [] };
     },
     get<K extends RecordType>(kind: K, id: string, lock?: boolean) {
       return find<Records[K]>(`SELECT body FROM ${tables[kind]} WHERE id = $1${lock ? " FOR UPDATE" : ""}`, id);

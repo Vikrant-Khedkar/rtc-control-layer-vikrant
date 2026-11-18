@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Boxes, Compass, LayoutDashboard, LogOut, Settings2, Ship } from "lucide-react";
+import { ArrowLeft, Boxes, BriefcaseBusiness, Compass, LayoutDashboard, LogOut, Settings2, Ship } from "lucide-react";
 import { signOut } from "./actions";
 import { RoleForm } from "./forms";
 import type { Actor, Audit } from "../src/core/model";
@@ -28,6 +28,8 @@ export function Shell({ actor, path, children }: { actor: Actor; path: string; c
       <div className="mx-auto max-w-7xl px-4 pb-12 sm:px-8">
         <nav aria-label="Workspace" className="flex flex-wrap items-center gap-2 border-b border-line py-3">
           <Link href="/" aria-current={path === "/" ? "page" : undefined} className={`button ${path === "/" ? "!border-transparent !bg-rosewash !text-wine" : ""}`}><LayoutDashboard size={16} /> God View</Link>
+          <Link href="/jobs" aria-current={path === "/jobs" ? "page" : undefined}
+            className={`button ${path.startsWith("/jobs") ? "!border-transparent !bg-rosewash !text-wine" : ""}`}><BriefcaseBusiness size={16} /> Jobs</Link>
           {admin && <Link href="/config" aria-current={path === "/config" ? "page" : undefined} className={`button ${path === "/config" ? "!border-transparent !bg-rosewash !text-wine" : ""}`}><Settings2 size={16} /> Configuration</Link>}
           <Link href={path.startsWith("/tour") ? path : "/tour"} aria-current={path.startsWith("/tour") ? "page" : undefined}
             className={`button ${path.startsWith("/tour") ? "!border-transparent !bg-rosewash !text-wine" : ""}`}><Compass size={16} /> Guided tour</Link>
@@ -39,9 +41,11 @@ export function Shell({ actor, path, children }: { actor: Actor; path: string; c
   );
 }
 
-export function Heading({ title, text, back }: { title: string; text: string; back?: boolean }) {
+export function Heading({ title, text, back }: { title: string; text: string; back?: boolean | "jobs" }) {
   return <div>
-    {back && <Link href="/" className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-wine"><ArrowLeft size={15} /> God View</Link>}
+    {back && <Link href={back === "jobs" ? "/jobs" : "/"} className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-wine">
+      <ArrowLeft size={15} /> {back === "jobs" ? "Back to Jobs" : "God View"}
+    </Link>}
     <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{title}</h1>
     <p className="quiet mt-2">{text}</p>
   </div>;
