@@ -13,12 +13,11 @@ const responsibilities: Record<Role, string> = {
   admin: "Manage milestones, statuses and permissions",
 };
 
-export function ProfilePicker({ current, gate, returnTo }: { current?: Role; gate?: boolean; returnTo: string }) {
+export function ProfilePicker({ current, gate }: { current?: Role; gate?: boolean }) {
   const [selectedRole, setSelectedRole] = useState<Role>(current ?? "operations");
   const [state, action, pending] = useActionState(chooseRole, {});
   const selected = demoUsers.find((person) => person.role === selectedRole)!;
   return <form action={action} className="space-y-5">
-    <input type="hidden" name="returnTo" value={returnTo} />
     <fieldset disabled={pending} className="grid gap-3 sm:grid-cols-2">
       <legend className="sr-only">Demo profiles</legend>
       {demoUsers.map((person) => <label key={person.role} className={`relative flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors focus-within:outline-2 focus-within:outline-wine ${selectedRole === person.role ? "border-wine bg-rosewash" : "border-line bg-white hover:bg-canvas"}`}>

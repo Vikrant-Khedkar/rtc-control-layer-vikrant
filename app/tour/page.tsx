@@ -7,7 +7,7 @@ export const metadata = { title: "Guided tour" };
 
 const screens = [
   { icon: Inbox, title: "Enquiry review", text: "Open an incoming enquiry. If it needs review, check what’s missing and update it when you have the information." },
-  { icon: SearchCheck, title: "Enquiry detail", text: "Draft an internal quote on the board, then switch to Manager on the same enquiry to review and approve it." },
+  { icon: SearchCheck, title: "Enquiry detail", text: "Draft an internal quote on the board. Switch to Manager and open Jobs → My queue to review and approve it." },
   { icon: Ship, title: "Job detail", text: "Switch back to Operations to complete milestones and handle a job exception." },
   { icon: Wallet, title: "Billing", text: "Switch to Accounts when the job is billing-ready. Close it and check the audit history." },
 ];

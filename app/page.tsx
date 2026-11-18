@@ -19,7 +19,7 @@ export default async function Dashboard() {
         <h1 className="mt-8 text-3xl font-bold tracking-tight">Sea Import Customs</h1>
         <p className="quiet mt-2 mb-6">Track an enquiry through quote approval, operational milestones and billing closure. All records in this assessment are synthetic.</p>
         {mode === "disabled" ? <p className="text-sm font-semibold text-wine">The demo is unavailable on this deployment.</p>
-          : <ProfilePicker gate={mode === "protected"} returnTo="/" />}
+          : <ProfilePicker gate={mode === "protected"} />}
       </div>
     </main>;
   }

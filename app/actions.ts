@@ -7,7 +7,7 @@ import { z } from "zod";
 import { importDemoInbox } from "../demo/inbox";
 import { intakeFields, permissions, roles, statusKeys, WorkflowError } from "../src/core/model";
 import { services } from "../src/server/services";
-import { codeMatches, cookieName, currentActor, demoMode, requireActor, safeReturnPath } from "../src/server/session";
+import { codeMatches, cookieName, currentActor, demoMode, requireActor } from "../src/server/session";
 
 export type ActionResult = { error?: string; success?: string };
 type Command = "import-inbox" | "create" | "edit" | "draft" | "approve" | "advance" | "set-job-status" | "raise" | "resolve" | "close" | "config";
@@ -35,7 +35,7 @@ export async function chooseRole(_: ActionResult, form: FormData): Promise<Actio
   jar.set(cookieName, session.token, {
     httpOnly: true, secure: mode === "protected", sameSite: "lax", path: "/", expires: session.expiresAt,
   });
-  redirect(safeReturnPath(value(form, "returnTo")));
+  redirect("/");
 }
 
 export async function signOut() {

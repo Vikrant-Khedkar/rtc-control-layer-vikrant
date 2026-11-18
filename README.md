@@ -20,7 +20,7 @@ npm run db:setup
 npm run dev
 ```
 
-Open the printed address, enter as **Operations** and go to **Jobs → Board**. Select **Simulate incoming enquiries** for a fresh demo batch, then open a **Ready to quote** card in **Enquiry review**. Check the details and select **Draft internal quote**. The card moves to **Quote approval**. Switch profiles on the same board to review and approve the quote. The card moves to **Job execution** as a job with a **Ready to start** badge. Switch back to Operations and complete the milestones in Job Detail. Once the job shows **Awaiting Accounts**, switch to Accounts, open **Billing** and close it.
+Open the printed address, enter as **Operations** and go to **Jobs → Board**. Select **Simulate incoming enquiries** for a fresh demo batch, then open a **Ready to quote** card in **Enquiry review**. Check the details and select **Draft internal quote**. The card moves to **Quote approval**. Switch to Manager, then open **Jobs → My queue** to review and approve the quote. The card moves to **Job execution** as a job with a **Ready to start** badge. Switch back to Operations, reopen the job, and complete the milestones in Job Detail. Once the job shows **Awaiting Accounts**, switch to Accounts, reopen the job from **Jobs → My queue**, and close it in **Billing**.
 
 Use **Jobs** in the navigation to open a specific record and update its status or complete a milestone. As Admin, add an option under **Configuration → Custom job statuses** and save. Operations can select that status on any open job, and the change appears in the audit history and God View. Billing readiness continues to follow milestone completion and exception resolution.
 
