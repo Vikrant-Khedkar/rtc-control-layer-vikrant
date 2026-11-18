@@ -4,6 +4,7 @@ import nextEnv from "@next/env";
 import { Pool } from "pg";
 import { defaultWorkflow, demoUsers, exampleRate } from "../demo/fixtures";
 import { importDemoInbox } from "../demo/inbox";
+import { seedDemoJobs } from "../demo/jobs";
 import { mockRate } from "../src/adapters/mock-rate";
 import { postgresStore } from "../src/adapters/postgres";
 import { can } from "../src/core/model";
@@ -57,12 +58,15 @@ try {
 
 try {
   const store = postgresStore(pool);
-  const operations = (await store.read.actors()).find((actor) => actor.role === "operations");
+  const actors = await store.read.actors();
+  const operations = actors.find((actor) => actor.role === "operations");
+  const manager = actors.find((actor) => actor.role === "manager");
   if (operations && can(await store.read.settings(), operations, "intake.write")) {
     const workflow = createWorkflow({ store, rates: mockRate(exampleRate), id: randomUUID, now: () => new Date() });
     await importDemoInbox(workflow, operations, "STARTER");
+    if (manager) await seedDemoJobs(workflow, store, operations, manager);
   }
-  console.log("RTC schema, synthetic users, workflow and sample inbox are ready.");
+  console.log("RTC schema, synthetic users, workflow, sample inbox and jobs are ready.");
 } finally {
   await pool.end();
 }

@@ -3,7 +3,9 @@ import { ArrowUpRight } from "lucide-react";
 import { billingState, currentStage, openExceptions, stageDeadline, type Job, type Settings } from "../../src/core/model";
 import { Badge, Empty, ShortId } from "../ui";
 
-export function JobTable({ jobs, users, labels }: { jobs: Job[]; users: Map<string, string>; labels: Settings["labels"] }) {
+export function JobTable({ jobs, users, labels, emptyMessage = "Approved quotes appear here as jobs." }: {
+  jobs: Job[]; users: Map<string, string>; labels: Settings["labels"]; emptyMessage?: string;
+}) {
   const now = Date.now();
   return (jobs.length ? <div className="overflow-x-auto"><table className="data-table min-w-[1150px]">
         <thead><tr>{["Job ID", "Customer", "Mode", "Current stage", "Owner", "SLA", "Job status", "Exceptions", "Next action", "Billing"].map((label) => <th key={label} scope="col">{label}</th>)}</tr></thead>
@@ -22,5 +24,5 @@ export function JobTable({ jobs, users, labels }: { jobs: Job[]; users: Map<stri
             <td><Badge text={labels[billing]} tone={billing === "billing_ready" ? "good" : "neutral"} /></td>
           </tr>;
         })}</tbody>
-      </table></div> : <Empty message="Approved quotes appear here as jobs." />);
+      </table></div> : <Empty message={emptyMessage} />);
 }

@@ -3,9 +3,10 @@ import { Pool } from "pg";
 import { afterAll, describe, expect, it } from "vitest";
 import { defaultWorkflow, demoUsers, exampleEnquiry, exampleRate } from "../demo/fixtures";
 import { importDemoInbox } from "../demo/inbox";
+import { seedDemoJobs } from "../demo/jobs";
 import { mockRate } from "../src/adapters/mock-rate";
 import { postgresDemoIdentity, postgresStore } from "../src/adapters/postgres";
-import { billingState, currentStage } from "../src/core/model";
+import { billingState, currentStage, jobActionFor } from "../src/core/model";
 import { createWorkflow } from "../src/core/workflow";
 
 if (!process.env.TEST_DATABASE_URL) throw new Error("Set TEST_DATABASE_URL or run npm run test:local.");
@@ -25,13 +26,37 @@ async function draft() {
 
 async function finish(jobId: string) {
   for (const step of (await store.read.get("jobs", jobId))!.milestones) {
-    await workflow.advanceJob(operations, jobId, step.id);
+    if (!step.completedAt) await workflow.advanceJob(operations, jobId, step.id);
   }
 }
 
 afterAll(() => pool.end());
 
 describe("Sea Import Customs on Postgres", () => {
+  it("gives each role actionable sample jobs and preserves progress after reseeding", async () => {
+    async function sample(ref: string) {
+      const enquiry = await store.read.enquiryByRef(ref);
+      const quote = await store.read.quoteByEnquiry(enquiry!.id);
+      expect(quote?.approvedAt).toBeTruthy();
+      return (await store.read.jobByQuote(quote!.id))!;
+    }
+    const settings = await store.read.settings();
+    const incoming = await sample("DEMO-JOB-DOCUMENTS");
+    const exception = await sample("DEMO-JOB-CUSTOMS-QUERY");
+    const billing = await sample("DEMO-JOB-BILLING");
+    expect(jobActionFor(incoming, settings, operations)?.section).toBe("milestones");
+    expect(jobActionFor(incoming, settings, accounts)).toBeUndefined();
+    expect(jobActionFor(exception, settings, operations)?.section).toBe("exceptions");
+    expect(jobActionFor(billing, settings, accounts)?.section).toBe("billing");
+    await workflow.advanceJob(operations, incoming.id, currentStage(incoming)!.id);
+    await seedDemoJobs(workflow, store, operations, manager);
+    expect(currentStage(await sample("DEMO-JOB-DOCUMENTS"))?.label).toBe("Customs cleared");
+    await finish(incoming.id);
+    const ready = await sample("DEMO-JOB-DOCUMENTS");
+    expect(jobActionFor(ready, settings, operations)).toBeUndefined();
+    expect(jobActionFor(ready, settings, accounts)?.section).toBe("billing");
+  });
+
   it("imports complete and incomplete enquiries and safely replays the same inbox batch", async () => {
     const batch = randomUUID().toUpperCase();
     await importDemoInbox(workflow, operations, batch);

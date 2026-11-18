@@ -64,7 +64,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
             {settings.jobStatuses.length === 0 && <p className="quiet">An Admin can add statuses in Configuration.</p>}
           </CommandForm>
         </section>}
-        <section className="panel pad space-y-4">
+        <section id="milestones" className="panel pad space-y-4">
           <h2 className="font-semibold">Operational milestones <span className="ml-1 text-xs font-normal text-muted">Workflow v{job.configVersion}</span></h2>
           <ol className="space-y-3">{job.milestones.map((step) => <li key={step.id} className="flex items-center gap-3 text-sm">
             <span className={`grid size-7 shrink-0 place-items-center rounded-full ${step.completedAt ? "bg-emerald-50 text-emerald-800" : "bg-stone-100 text-muted"}`}>
@@ -82,7 +82,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
         </section>
       </div>
       <div className="space-y-5">
-        <section className="panel pad space-y-4">
+        <section id="exceptions" className="panel pad space-y-4">
           <h2 className="font-semibold">Exceptions</h2>
           {job.exceptions.length === 0 && <p className="quiet">No exceptions raised.</p>}
           {job.exceptions.map((issue) => <div key={issue.id} className="rounded-lg border border-line bg-canvas p-3 space-y-3">
@@ -105,7 +105,7 @@ export default async function JobPage({ params }: { params: Promise<{ id: string
             </CommandForm>
           </details>}
         </section>
-        <section className="panel pad space-y-3">
+        <section id="billing" className="panel pad space-y-3">
           <div className="flex justify-between gap-2"><h2 className="font-semibold">Billing</h2><Badge text={settings.labels[billing]} tone={billing === "billing_ready" ? "good" : "neutral"} /></div>
           {job.closedAt ? <p className="quiet">Closed {time(job.closedAt)} IST.</p>
             : billing === "active" ? <p className="quiet">Finish all milestones and resolve open exceptions to make this job billing-ready.</p>

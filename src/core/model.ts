@@ -104,6 +104,23 @@ export function billingState(job: Job): "active" | "billing_ready" | "closed" {
   return !currentStage(job) && !openExceptions(job).length ? "billing_ready" : "active";
 }
 
+export function jobActionFor(job: Job, settings: Settings, actor: Actor) {
+  const billing = billingState(job);
+  if (billing === "closed") return undefined;
+  if (billing === "billing_ready" && can(settings, actor, "billing.close")) {
+    return { title: "Review and close billing", detail: "Milestones are complete and there are no open exceptions.", label: "Review billing", section: "billing" };
+  }
+  const issue = openExceptions(job).find((item) => item.ownerId === actor.id);
+  if (issue && can(settings, actor, "exception.manage")) {
+    return { title: `Resolve: ${issue.description}`, detail: issue.recovery, label: "Open exception", section: "exceptions" };
+  }
+  const stage = currentStage(job);
+  if (stage && job.ownerId === actor.id && can(settings, actor, "job.advance")) {
+    return { title: `Complete: ${stage.label}`, detail: "You own this job.", label: "Work on job", section: "milestones" };
+  }
+  return undefined;
+}
+
 export function stageDeadline(job: Job): Date | undefined {
   const stage = currentStage(job);
   if (!stage) return undefined;
