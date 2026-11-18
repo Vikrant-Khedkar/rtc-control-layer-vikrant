@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { jobSectionPath } from "./sections";
 import { ArrowUpRight } from "lucide-react";
 import { currentStage, jobActionFor, jobLane, openExceptions, type Actor, type Job, type Settings } from "../../src/core/model";
 import { Badge, ShortId } from "../ui";
 
 const lanes = [
-  { key: "new", label: "Newly approved", marker: "bg-wine" },
+  { key: "new", label: "Ready to start", marker: "bg-wine" },
   { key: "working", label: "In progress", marker: "bg-sky-600" },
   { key: "attention", label: "Needs attention", marker: "bg-amber-600" },
   { key: "ready", label: "Billing ready", marker: "bg-emerald-600" },
@@ -48,7 +49,7 @@ export function JobBoard({ jobs, users, settings, actor }: { jobs: Job[]; users:
                   <div><dt className="sr-only">Job owner</dt><dd className="text-muted">{users.get(job.ownerId) ?? "Unassigned"}</dd></div>
                 </dl>
                 {job.operationalStatus && <Badge text={job.operationalStatus.label} />}
-                <Link href={`/jobs/${job.id}${action ? `#${action.section}` : ""}`} className="flex min-h-9 items-center justify-between gap-1 rounded-md border border-line px-2.5 text-xs font-semibold text-wine hover:bg-rosewash"
+                <Link href={`/jobs/${job.id}${action ? jobSectionPath(action.section) : ""}`} className="flex min-h-9 items-center justify-between gap-1 rounded-md border border-line px-2.5 text-xs font-semibold text-wine hover:bg-rosewash"
                   aria-label={`${action?.label ?? "View job"} for ${customer}`}>
                   {action?.label ?? "View job"} <ArrowUpRight size={14} aria-hidden />
                 </Link>

@@ -108,7 +108,7 @@ export function jobActionFor(job: Job, settings: Settings, actor: Actor) {
   const billing = billingState(job);
   if (billing === "closed") return undefined;
   if (billing === "billing_ready" && can(settings, actor, "billing.close")) {
-    return { title: "Review and close billing", detail: "Milestones are complete and there are no open exceptions.", label: "Review billing", section: "job-actions" };
+    return { title: "Review and close billing", detail: "Milestones are complete and there are no open exceptions.", label: "Review billing", section: "billing" };
   }
   const issue = openExceptions(job).find((item) => item.ownerId === actor.id);
   if (issue && can(settings, actor, "exception.manage")) {

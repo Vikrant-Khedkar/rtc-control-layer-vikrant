@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { jobSectionPath } from "./sections";
 import { Columns3, ListChecks } from "lucide-react";
 import { billingState, jobActionFor, WorkflowError } from "../../src/core/model";
 import { services } from "../../src/server/services";
@@ -37,6 +38,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
       </nav>
       <Link href="/#enquiry-heading" className="text-sm font-semibold text-wine">View enquiry inbox</Link>
     </div>
+    {!queue && <p className="quiet">An enquiry becomes a job after the Manager approves its internal quote. <strong>Ready to start</strong> means the quote is approved and the first job milestone is pending.</p>}
     {!queue ? <JobBoard jobs={jobs} users={users} settings={view.settings} actor={actor} /> : <>
     <section aria-labelledby="action-heading">
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -52,7 +54,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
           <h3 className="font-semibold">{job.data.customer || "Sea Import job"}</h3>
           <p className="mt-1 text-sm font-semibold">{action.title}</p>
           <p className="quiet mb-2">{action.detail}</p>
-          <Link href={`/jobs/${job.id}#${action.section}`} className="button primary mt-auto" aria-label={`${action.label} for ${job.data.customer || "Sea Import job"}`}>{action.label}</Link>
+          <Link href={`/jobs/${job.id}${jobSectionPath(action.section)}`} className="button primary mt-auto" aria-label={`${action.label} for ${job.data.customer || "Sea Import job"}`}>{action.label}</Link>
         </article>)}
       </div> : <p className="panel pad quiet">{actor.role === "manager"
         ? "Quotes awaiting Manager approval are in the enquiry inbox."
