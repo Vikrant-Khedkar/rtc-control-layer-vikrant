@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRightLeft, Boxes, BriefcaseBusiness, Compass, Inbox, LayoutDashboard, LogOut, Settings2, Ship } from "lucide-react";
+import { ArrowLeft, ArrowRightLeft, Boxes, BriefcaseBusiness, Compass, LayoutDashboard, LogOut, Settings2, Ship } from "lucide-react";
 import { signOut } from "./actions";
 import type { Actor, Audit } from "../src/core/model";
 
@@ -14,7 +14,6 @@ export function Shell({ actor, path, children }: { actor: Actor; path: string; c
   const pathname = path.split("?")[0];
   const links = [
     { href: "/", label: "God View", icon: LayoutDashboard },
-    { href: "/enquiries", label: "Enquiry inbox", icon: Inbox },
     { href: "/jobs", label: "Jobs", icon: BriefcaseBusiness },
     ...(actor.role === "admin" ? [{ href: "/config", label: "Configuration", icon: Settings2 }] : []),
     { href: "/tour", label: "Guided tour", icon: Compass },

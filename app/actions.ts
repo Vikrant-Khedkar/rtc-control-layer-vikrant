@@ -50,7 +50,7 @@ export async function signOut() {
 export async function startTour() {
   await requireActor();
   (await cookies()).set("rtc_guide", "1", { httpOnly: true, sameSite: "lax", path: "/", secure: demoMode() === "protected" });
-  redirect("/enquiries");
+  redirect("/jobs");
 }
 
 export async function endTour() {
@@ -86,7 +86,7 @@ export async function runCommand(_: ActionResult, form: FormData): Promise<Actio
         break;
       case "approve": {
         const job = await workflow.approveQuote(actor, recordId(form, "quoteId"));
-        destination = `/jobs/${job.id}`;
+        destination = value(form, "fromBoard") === "1" ? `/jobs?enquiry=${job.enquiryId}` : `/jobs/${job.id}`;
         break;
       }
       case "advance":

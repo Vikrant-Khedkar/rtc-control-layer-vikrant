@@ -6,8 +6,8 @@ import { Heading, Shell } from "../ui";
 export const metadata = { title: "Guided tour" };
 
 const screens = [
-  { icon: Inbox, title: "Enquiry inbox", text: "Open an incoming enquiry. If it needs review, check what’s missing and update it when you have the information." },
-  { icon: SearchCheck, title: "Enquiry detail", text: "Draft an internal quote, then switch to Manager to review and approve it." },
+  { icon: Inbox, title: "Enquiry review", text: "Open an incoming enquiry. If it needs review, check what’s missing and update it when you have the information." },
+  { icon: SearchCheck, title: "Enquiry detail", text: "Draft an internal quote on the board, then switch to Manager on the same enquiry to review and approve it." },
   { icon: Ship, title: "Job detail", text: "Switch back to Operations to complete milestones and handle a job exception." },
   { icon: Wallet, title: "Billing", text: "Switch to Accounts when the job is billing-ready. Close it and check the audit history." },
 ];
@@ -24,7 +24,7 @@ export default async function TourPage() {
           <p className="quiet mt-1">{text}</p>
         </li>,
       )}</ol>
-      <form action={startTour}><button className="button primary" type="submit">Start at the enquiry inbox</button></form>
+      <form action={startTour}><button className="button primary" type="submit">Start at the board</button></form>
     </section>
   </Shell>;
 }
