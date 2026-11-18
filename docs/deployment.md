@@ -7,7 +7,7 @@ On 18 November 2026, the deployed workflow test verified quote pricing from Admi
 ## Prepare the release
 
 - [ ] Run `npm ci`, `npm run typecheck`, `npm run test:local`, and `npm run build` from the release checkout. Use a separate local test database for the integration suite.
-- [ ] Confirm the release commit is in the private GitHub repository and environment files are excluded from the release.
+- [ ] Confirm the release commit is in the GitHub repository and environment files are excluded from the release.
 
 ## Set up Neon
 
@@ -25,7 +25,7 @@ On 18 November 2026, the deployed workflow test verified quote pricing from Admi
 
 ## Deploy a Vercel Preview
 
-- [ ] Create a Vercel Next.js project for the private repository. Use Node.js 24 and enable Fluid compute.
+- [ ] Create a Vercel Next.js project for the source repository. Use Node.js 24 and enable Fluid compute.
 - [ ] Under **Deployment Protection**, enable **Vercel Authentication → Standard Protection**. [Vercel Deployment Protection](https://vercel.com/docs/deployment-protection)
 - [ ] Under **Environment Variables**, keep system environment variables enabled. The app uses `VERCEL` and `VERCEL_ENV` to recognize a preview. [Vercel system variables](https://vercel.com/docs/environment-variables/system-environment-variables)
 - [ ] Set `DATABASE_URL` for **Preview** only, using the TLS-enabled pooled Neon URL for `rtc_app`. Set `RTC_PUBLIC_DEMO=1` on the assessment deployment. Keep `MIGRATION_DATABASE_URL`, `RTC_RUNTIME_ROLE` and `RTC_LOCAL_DEMO` in the local setup.
