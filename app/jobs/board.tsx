@@ -39,21 +39,24 @@ export function JobBoard({ jobs, people, settings, actor }: { jobs: Job[]; peopl
               const issue = openExceptions(job)[0];
               const handoff = jobHandoff(job, people);
               const customer = job.data.customer || "Sea Import job";
-              return <article key={job.id} className="panel space-y-2.5 p-3">
-                <div className="flex flex-wrap items-center justify-between gap-1">
-                  <span className="text-muted"><ShortId prefix="JOB" id={job.id} /></span>
-                  {action && <Badge text="Needs you" tone="danger" />}
-                </div>
-                <h3 className="text-sm font-semibold">{customer}</h3>
-                <dl className="space-y-1 text-xs">
-                  <div><dt className="sr-only">Current milestone</dt><dd>{stage ? `Next: ${stage.label}` : "Milestones complete"}</dd></div>
-                  {issue && <div><dt className="sr-only">Open exception</dt><dd className="text-amber-900">{issue.description}</dd></div>}
-                  {handoff && <div><dt className="sr-only">Waiting on</dt><dd><WaitingOn handoff={handoff} /></dd></div>}
-                </dl>
-                {job.operationalStatus && <Badge text={job.operationalStatus.label} />}
-                <Link href={`/jobs/${job.id}${action ? jobSectionPath(action.section) : ""}`} className="flex min-h-9 items-center justify-between gap-1 rounded-md border border-line px-2.5 text-xs font-semibold text-wine hover:bg-rosewash"
+              return <article key={job.id}>
+                <Link href={`/jobs/${job.id}${action ? jobSectionPath(action.section) : ""}`}
+                  className="panel group block space-y-2.5 p-3 hover:border-wine/40 hover:bg-rosewash/30 motion-safe:transition-colors motion-safe:duration-150"
                   aria-label={`${action?.label ?? "View job"} for ${customer}`}>
-                  {action?.label ?? "View job"} <ArrowUpRight size={14} aria-hidden />
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-muted"><ShortId prefix="JOB" id={job.id} /></span>
+                    {action && <Badge text="Needs you" tone="danger" />}
+                  </div>
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="text-sm font-semibold">{customer}</h3>
+                    <ArrowUpRight size={16} aria-hidden className="mt-0.5 shrink-0 text-wine motion-safe:transition-transform motion-safe:duration-150 motion-safe:group-hover:translate-x-0.5 motion-safe:group-hover:-translate-y-0.5" />
+                  </div>
+                  <dl className="space-y-1 text-xs">
+                    <div><dt className="sr-only">Current milestone</dt><dd>{stage ? `Next: ${stage.label}` : "Milestones complete"}</dd></div>
+                    {issue && <div><dt className="sr-only">Open exception</dt><dd className="text-amber-900">{issue.description}</dd></div>}
+                    {handoff && <div><dt className="sr-only">Waiting on</dt><dd><WaitingOn handoff={handoff} /></dd></div>}
+                  </dl>
+                  {job.operationalStatus && <Badge text={job.operationalStatus.label} />}
                 </Link>
               </article>;
             })}
