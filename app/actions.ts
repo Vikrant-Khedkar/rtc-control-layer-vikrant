@@ -35,7 +35,8 @@ export async function chooseRole(_: ActionResult, form: FormData): Promise<Actio
     httpOnly: true, secure: mode === "protected", sameSite: "lax", path: "/", expires: session.expiresAt,
   });
   const returnTo = value(form, "returnTo");
-  redirect(/^\/(?:config|(?:enquiries|jobs)\/[a-f0-9-]{36})$/.test(returnTo) ? returnTo : "/");
+  const safePath = /^\/(?:config|(?:enquiries|jobs)\/[a-f0-9-]{36}|tour(?:\?enquiry=[a-f0-9-]{36})?)$/;
+  redirect(safePath.test(returnTo) ? returnTo : "/");
 }
 
 export async function signOut() {
@@ -50,6 +51,7 @@ export async function runCommand(_: ActionResult, form: FormData): Promise<Actio
   const actor = await requireActor();
   const { workflow } = services();
   const command = value(form, "command") as Command;
+  const guided = value(form, "guided") === "1";
   const data = {
     customer: value(form, "customer"), billOfLading: value(form, "billOfLading"),
     arrivalPort: value(form, "arrivalPort"), eta: value(form, "eta"), consignee: value(form, "consignee"),
@@ -60,7 +62,7 @@ export async function runCommand(_: ActionResult, form: FormData): Promise<Actio
     switch (command) {
       case "create": {
         const enquiry = await workflow.createEnquiry(actor, value(form, "sourceRef"), data);
-        destination = `/enquiries/${enquiry.id}`;
+        destination = guided ? `/tour?enquiry=${enquiry.id}` : `/enquiries/${enquiry.id}`;
         break;
       }
       case "edit":
@@ -71,7 +73,7 @@ export async function runCommand(_: ActionResult, form: FormData): Promise<Actio
         break;
       case "approve": {
         const job = await workflow.approveQuote(actor, recordId(form, "quoteId"));
-        destination = `/jobs/${job.id}`;
+        destination = guided ? `/tour?enquiry=${job.enquiryId}` : `/jobs/${job.id}`;
         break;
       }
       case "advance":

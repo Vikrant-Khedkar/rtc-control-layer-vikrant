@@ -6,18 +6,21 @@ import { chooseRole, runCommand } from "./actions";
 import { intakeFields, intakeLabels, permissions, roles, statusKeys, type Intake, type Role, type Settings } from "../src/core/model";
 import { exampleEnquiry } from "../demo/fixtures";
 
-export function RoleForm({ role, gate, returnTo }: { role?: Role; gate?: boolean; returnTo: string }) {
+export function RoleForm({ role, gate, returnTo, targetRole }: { role?: Role; gate?: boolean; returnTo: string; targetRole?: Role }) {
   const [state, action, pending] = useActionState(chooseRole, {});
+  const targetLabel = targetRole && targetRole[0].toUpperCase() + targetRole.slice(1);
   return (
     <form action={action} className="flex flex-wrap items-end gap-2">
       <input type="hidden" name="returnTo" value={returnTo} />
       {gate && <label className="min-w-52 flex-1"><span className="label">Reviewer access code</span>
         <input required name="code" type="password" autoComplete="off" className="field" /></label>}
-      <label><span className={role ? "sr-only" : "label"}>Demo role</span>
+      {targetRole ? <input type="hidden" name="role" value={targetRole} /> : <label><span className={role ? "sr-only" : "label"}>Demo role</span>
         <select name="role" defaultValue={role ?? "operations"} className="field capitalize">
           {roles.map((item) => <option key={item} value={item}>{item[0].toUpperCase() + item.slice(1)}</option>)}
-        </select></label>
-      <button type="submit" className={role ? "button" : "button primary"} disabled={pending}>{role ? "Switch role" : "Enter workspace"}</button>
+        </select></label>}
+      <button type="submit" className={role && !targetRole ? "button" : "button primary"} disabled={pending}>
+        {targetLabel ? `Switch to ${targetLabel}` : role ? "Switch role" : "Enter workspace"}
+      </button>
       {state.error && <p role="alert" className="w-full text-sm text-wine">{state.error}</p>}
     </form>
   );

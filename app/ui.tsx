@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Boxes, LayoutDashboard, LogOut, Settings2, Ship } from "lucide-react";
+import { ArrowLeft, Boxes, Compass, LayoutDashboard, LogOut, Settings2, Ship } from "lucide-react";
 import { signOut } from "./actions";
 import { RoleForm } from "./forms";
 import type { Actor, Audit } from "../src/core/model";
@@ -29,6 +29,8 @@ export function Shell({ actor, path, children }: { actor: Actor; path: string; c
         <nav aria-label="Workspace" className="flex flex-wrap items-center gap-2 border-b border-line py-3">
           <Link href="/" aria-current={path === "/" ? "page" : undefined} className={`button ${path === "/" ? "!border-transparent !bg-rosewash !text-wine" : ""}`}><LayoutDashboard size={16} /> God View</Link>
           {admin && <Link href="/config" aria-current={path === "/config" ? "page" : undefined} className={`button ${path === "/config" ? "!border-transparent !bg-rosewash !text-wine" : ""}`}><Settings2 size={16} /> Configuration</Link>}
+          <Link href={path.startsWith("/tour") ? path : "/tour"} aria-current={path.startsWith("/tour") ? "page" : undefined}
+            className={`button ${path.startsWith("/tour") ? "!border-transparent !bg-rosewash !text-wine" : ""}`}><Compass size={16} /> Guided tour</Link>
           <span className="ml-auto hidden text-xs text-muted sm:inline">Sea Import Customs · Synthetic data</span>
         </nav>
         <main className="mt-7 space-y-6">{children}</main>
